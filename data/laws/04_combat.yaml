@@ -1,0 +1,48 @@
+# 大明律 - 刑律 - 人命/斗殴篇 (战斗相关)
+# 来源: 《大明律集解附例》
+# 注: 文本为通俗化整理,保留法律精神,便于 AI 引用
+
+- id: 大明律.刑律.人命.斗殴杀人
+  category: 人命
+  source: 大明律·刑律·人命
+  era: 明代
+  text: "凡斗殴杀人者,不问手足、他物、金刃,并绞监候。"
+  applies_to: [violence, killing, homicide]
+  keywords: [杀, 打死, 致命, 斗杀, 致死]
+  consequence_hint: "绞监候,秋后问斩"
+
+- id: 大明律.刑律.斗殴.持械伤人
+  category: 斗殴
+  source: 大明律·刑律·斗殴
+  era: 明代
+  text: "凡持金刃及他物伤人者,杖八十,徒二年;若折人肋、眇人目者,杖一百,徒三年。"
+  applies_to: [violence, weapon, injury]
+  keywords: [刀, 剑, 武器, 伤人, 流血, 重伤, 金刃, 持械]
+  consequence_hint: "杖八十以上,徒二年以上"
+
+- id: 大明律.刑律.斗殴.误伤旁人
+  category: 斗殴
+  source: 大明律·刑律·斗殴
+  era: 明代
+  text: "凡因斗殴而误杀伤旁人者,以斗杀伤论;若本应得重罪而误伤者,减一等。"
+  applies_to: [violence, collateral_damage, mistake]
+  keywords: [误伤, 波及, 旁观, 路人, 误杀]
+  consequence_hint: "按斗殴论处,视伤情而定"
+
+- id: 大明律.刑律.斗殴.拒捕伤差
+  category: 斗殴
+  source: 大明律·刑律·斗殴
+  era: 明代
+  text: "凡犯罪拒捕及殴所捕人者,各于本罪上加二等。若折伤以上者,绞监候。"
+  applies_to: [violence, against_guard, resisting_arrest]
+  keywords: [捕快, 衙役, 拒捕, 反抗, 差役, 公差]
+  consequence_hint: "在原罪上加二等,致伤者绞监候"
+
+- id: 大明律.刑律.斗殴.威力制缚
+  category: 斗殴
+  source: 大明律·刑律·斗殴
+  era: 明代
+  text: "凡因事用强殴打威逼人致死,虽非手足,亦绞。若因公事或救父母等,减等。"
+  applies_to: [violence, coercion, intimidation]
+  keywords: [威逼, 胁迫, 逼死, 逼杀, 恐吓]
+  consequence_hint: "绞监候,但有正当理由者减等"

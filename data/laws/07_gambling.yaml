@@ -1,0 +1,20 @@
+# 大明律 - 赌博相关
+# 来源: 《大明律集解附例》
+
+- id: 大明律.刑律.赌博.赌博
+  category: 赌博
+  source: 大明律·刑律·杂犯
+  era: 明代
+  text: "凡赌博财物者,杖八十;摊场钱物入官。职官加一等论罪。"
+  applies_to: [gambling, betting]
+  keywords: [赌, 博, 赌博, 骰子, 牌九, 押注, 赌钱]
+  consequence_hint: "杖八十,赌资充公;官员罪加一等"
+
+- id: 大明律.刑律.赌博.开场诱赌
+  category: 赌博
+  source: 大明律·刑律·杂犯
+  era: 明代
+  text: "凡开场诱赌者,杖一百,徒三年;容留赌博之家同罪。"
+  applies_to: [gambling, hosting, den]
+  keywords: [赌场, 赌坊, 开赌, 诱赌, 聚赌]
+  consequence_hint: "开场者杖一百、徒三年,容留者同罪"

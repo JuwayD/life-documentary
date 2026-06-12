@@ -1,0 +1,48 @@
+# 大明律 - 户律 - 田宅/婚姻/继承篇
+# 来源: 《大明律集解附例》
+# 注: 文本为通俗化整理,保留法律精神,便于 AI 引用
+
+- id: 大明律.户律.田宅.典卖田宅
+  category: 田宅
+  source: 大明律·户律·田宅
+  era: 明代
+  text: "凡典卖田宅不税契者,笞五十;仍追田宅价钱一半入官。不过割者,一亩至五亩笞四十,每五亩加一等,罪止杖一百,其田入官。"
+  applies_to: [land, property_transaction, tax]
+  keywords: [田, 地, 房, 典卖, 买卖, 契税, 地契, 过户, 田产, 房屋]
+  consequence_hint: "笞五十起,田宅价一半充公"
+
+- id: 大明律.户律.田宅.盗卖田宅
+  category: 田宅
+  source: 大明律·户律·田宅
+  era: 明代
+  text: "凡盗卖、换易及冒认若虚钱实契典买及侵占他人田宅者,田一亩、屋一间以下,笞五十;每田五亩、屋三间,加一等,罪止杖八十、徒二年。"
+  applies_to: [land, fraud, property_theft]
+  keywords: [盗卖, 冒认, 侵占, 田产, 假契, 强占, 占田, 夺产]
+  consequence_hint: "笞五十起,最高杖八十徒二年,还原产"
+
+- id: 大明律.户律.婚姻.男女婚姻
+  category: 婚姻
+  source: 大明律·户律·婚姻
+  era: 明代
+  text: "凡男女定婚之初,若有残疾、老幼、庶出、过房、乞养者,务要两家明白通知,各从所愿,写立婚书,依礼聘嫁。若许嫁女已报婚书及有私约而辄悔者,笞五十。"
+  applies_to: [marriage, contract, betrothal]
+  keywords: [婚, 嫁, 娶, 婚书, 媒妁, 聘礼, 悔婚, 许配, 退婚]
+  consequence_hint: "笞五十,婚约仍有效"
+
+- id: 大明律.户律.户役.立嫡违法
+  category: 户役
+  source: 大明律·户律·户役
+  era: 明代
+  text: "凡立嫡违法者,杖八十。其嫡妻年五十以上无子者,得立庶长子。不立长子者,罪亦同。"
+  applies_to: [inheritance, family, succession]
+  keywords: [嫡子, 庶子, 继承, 家产, 宗祧, 立嗣, 过继, 长子]
+  consequence_hint: "杖八十,强行改立正确继承人"
+
+- id: 大明律.户律.户役.卑幼私擅用财
+  category: 户役
+  source: 大明律·户律·户役
+  era: 明代
+  text: "凡同居卑幼不由尊长私擅用本家财物者,十贯笞二十,每十贯加一等,罪止杖一百。"
+  applies_to: [family, property, unauthorized]
+  keywords: [私用, 家财, 子弟, 偷用, 擅自, 长辈, 宗族]
+  consequence_hint: "笞二十起,最高杖一百,需赔偿家财"

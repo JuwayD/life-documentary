@@ -1,0 +1,154 @@
+- id: scholar
+  name: 落第书生
+  summary: 熟悉讼学与文书，适合从公堂申冤开局。
+  attributes:
+    max_hp: 24
+    hp: 24
+    attack: 1
+    defense: 8
+    str: 8
+    dex: 10
+    int: 14
+    observation: 11
+    money_wen: 50
+    rank: 平民
+    occupation: 书生
+    reputation: 0
+    origin: 扬州府
+    family_background: 没落寒门
+    social_identity: 落第书生
+    skills:
+      litigation:
+        name: 讼学
+        level: 1
+        xp: 8
+      calligraphy:
+        name: 书法
+        level: 1
+        xp: 5
+  inventory:
+    - id: petition
+      name: 状纸
+      qty: 1
+    - id: brush
+      name: 旧毛笔
+      qty: 1
+  start:
+    location: court_hall
+    pos: [4, 8]
+  tags: [player, literati]
+
+- id: merchant_son
+  name: 商人之子
+  summary: 钱粮宽裕，擅长交易与打点人情。
+  attributes:
+    max_hp: 26
+    hp: 26
+    attack: 1
+    defense: 8
+    str: 9
+    dex: 10
+    int: 12
+    observation: 10
+    money_wen: 180
+    rank: 平民
+    occupation: 商家子弟
+    reputation: 1
+    origin: 扬州府
+    family_background: 富商
+    social_identity: 商人之子
+    skills:
+      commerce:
+        name: 商贸
+        level: 1
+        xp: 10
+      persuasion:
+        name: 口才
+        level: 1
+        xp: 6
+  inventory:
+    - id: account_slip
+      name: 小账帖
+      qty: 1
+    - id: silver_piece
+      name: 碎银
+      qty: 1
+  start:
+    location: market_main
+    pos: [5, 5]
+  tags: [player, merchant]
+
+- id: military_heir
+  name: 武将后代
+  summary: 体魄较强，适合验证战斗、护送与冲突场景。
+  attributes:
+    max_hp: 34
+    hp: 34
+    attack: 3
+    defense: 11
+    str: 13
+    dex: 12
+    int: 9
+    observation: 9
+    money_wen: 35
+    rank: 平民
+    occupation: 武户子弟
+    reputation: 0
+    origin: 南京
+    family_background: 军户
+    social_identity: 武将后代
+    skills:
+      martial_arts:
+        name: 武艺
+        level: 1
+        xp: 12
+      tactics:
+        name: 阵法
+        level: 1
+        xp: 4
+  inventory:
+    - id: wooden_staff
+      name: 木棍
+      qty: 1
+      damage: 6
+  start:
+    location: court_yard
+    pos: [6, 6]
+  tags: [player, martial]
+
+- id: beggar
+  name: 城中乞儿
+  summary: 钱物匮乏但熟悉市井，适合验证低资源与传闻玩法。
+  attributes:
+    max_hp: 20
+    hp: 20
+    attack: 0
+    defense: 7
+    str: 7
+    dex: 12
+    int: 10
+    observation: 13
+    money_wen: 3
+    rank: 贱民
+    occupation: 乞丐
+    reputation: -1
+    origin: 扬州府
+    family_background: 流民
+    social_identity: 城中乞儿
+    skills:
+      streetwise:
+        name: 市井
+        level: 1
+        xp: 10
+      stealth:
+        name: 潜行
+        level: 1
+        xp: 4
+  inventory:
+    - id: broken_bowl
+      name: 破碗
+      qty: 1
+  start:
+    location: market_main
+    pos: [2, 8]
+  tags: [player, beggar]

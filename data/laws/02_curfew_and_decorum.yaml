@@ -1,0 +1,37 @@
+# 夜禁与礼制
+
+- id: 大明律.兵律.夜禁
+  category: 夜禁
+  source: 大明律·兵律·宫卫
+  era: 明代
+  text: "凡夜禁:一更三点以后至五更三点以前,犯者笞三十;京城笞四十。若有紧急军务或疾病者可免。"
+  applies_to: [curfew, night, street]
+  keywords: [夜, 晚上, 出门, 上街, 夜禁, 宵禁, 巡逻]
+  consequence_hint: "笞刑,被巡夜官差盘问;如反抗则罪加一等"
+
+- id: 大明律.礼律.官员相遇
+  category: 礼制
+  source: 大明律·礼律·仪制
+  era: 明代
+  text: "凡四品以上官员出行,军民见者须回避;街市冲突者笞五十;冲撞仪仗者杖一百。"
+  applies_to: [decorum, official_procession, avoidance]
+  keywords: [回避, 行礼, 仪仗, 挡路, 官员出行, 冲撞]
+  consequence_hint: "按冲撞程度,笞五十至杖一百"
+
+- id: 大明律.礼律.士农工商
+  category: 礼制
+  source: 大明律·礼律·仪制
+  era: 明代
+  text: "庶民服色不得僭用锦绣、纻丝;不得着靴;士农工商各守本业。违者笞五十,物没官。"
+  applies_to: [dress_code, social_class]
+  keywords: [穿衣, 僭越, 服饰, 着装, 品级, 等级]
+  consequence_hint: "服饰被没收,笞五十"
+
+- id: 大明律.刑律.犯奸
+  category: 犯奸
+  source: 大明律·刑律·犯奸
+  era: 明代
+  text: "凡和奸者,杖八十;有夫者,杖九十;强奸者,绞。官吏宿娼者,杖六十。"
+  applies_to: [adultery, rape, prostitution]
+  keywords: [奸, 嫖, 娼, 通奸, 强暴]
+  consequence_hint: "从杖到绞,视情节"

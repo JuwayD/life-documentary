@@ -1,0 +1,48 @@
+# 大明律 - 吏律 - 受赃/职制篇
+# 来源: 《大明律集解附例》
+# 注: 文本为通俗化整理,保留法律精神,便于 AI 引用
+
+- id: 大明律.刑律.受赃.官员受财
+  category: 受赃
+  source: 大明律·刑律·受赃
+  era: 明代
+  text: "凡官吏受财者,计赃科断:一贯以下杖七十;一贯以上至五贯杖八十;十贯杖九十;十五贯杖一百;二十贯杖六十徒一年;三十贯杖七十徒一年半;四十贯杖八十徒二年;五十贯杖九十徒二年半;五十五贯杖一百徒三年;八十贯绞。"
+  applies_to: [corruption, bribery, official_misconduct]
+  keywords: [受贿, 贪赃, 银两, 贿赂, 好处费, 孝敬, 打点, 收钱]
+  consequence_hint: "按赃额从杖七十到绞"
+
+- id: 大明律.刑律.受赃.有事以财请求
+  category: 受赃
+  source: 大明律·刑律·受赃
+  era: 明代
+  text: "凡诸人有事以财行求得枉法者,计所与财坐赃论。若得枉法者,与受财人同罪。"
+  applies_to: [bribery, corruption, influence_peddling]
+  keywords: [行贿, 送礼, 塞钱, 托人, 通融, 打点关系, 买通]
+  consequence_hint: "按行贿额坐赃论,得枉法者与受贿同罪"
+
+- id: 大明律.刑律.受赃.在官求索借贷财物
+  category: 受赃
+  source: 大明律·刑律·受赃
+  era: 明代
+  text: "凡监临官吏挟势及豪强之人求索借贷所部内财物者,并计赃准不枉法论。强者准枉法论,财物给主。"
+  applies_to: [extortion, official_abuse, forced_loan]
+  keywords: [索贿, 勒索, 强借, 摊派, 搜刮, 盘剥, 强索]
+  consequence_hint: "按赃额论,强迫者按枉法从重"
+
+- id: 大明律.吏律.公式.漏泄军情大事
+  category: 职制
+  source: 大明律·吏律·公式
+  era: 明代
+  text: "凡闻知朝廷及总兵将军调兵讨袭外蕃及收捕反逆贼徒机密大事而辄漏泄于敌人者,斩。若漏泄于非敌人者,杖一百,徒三年。"
+  applies_to: [official_secret, leak, intelligence]
+  keywords: [泄密, 机密, 军情, 告密, 通风报信, 文书外传]
+  consequence_hint: "泄于敌斩立决,泄于外人杖一百徒三年"
+
+- id: 大明律.吏律.职制.擅离职役
+  category: 职制
+  source: 大明律·吏律·职制
+  era: 明代
+  text: "凡官吏无故擅离职役者,笞四十。若避难因而在逃者,杖一百,罢职役不叙。"
+  applies_to: [official_duty, dereliction, desertion]
+  keywords: [离职, 脱岗, 在逃, 擅离, 弃职, 玩忽职守]
+  consequence_hint: "笞四十至杖一百,罢职不用"

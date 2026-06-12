@@ -1,0 +1,48 @@
+# 大明律 - 户律 - 市廛与钱债篇
+# 来源: 《大明律集解附例》
+# 注: 文本为通俗化整理,保留法律精神,便于 AI 引用
+
+- id: 大明律.户律.市廛.私充牙行埠头
+  category: 商业
+  source: 大明律·户律·市廛
+  era: 明代
+  text: "凡城市乡村诸色牙行及船埠头,并选有抵业人户充应,官给印信文簿。私充者,杖六十,所得牙钱入官。"
+  applies_to: [commerce, unlicensed_broker, market]
+  keywords: [牙行, 埠头, 经纪, 中介, 掮客, 无照经营, 买卖]
+  consequence_hint: "杖六十,非法所得充公"
+
+- id: 大明律.户律.市廛.把持行市
+  category: 商业
+  source: 大明律·户律·市廛
+  era: 明代
+  text: "凡买卖诸物,两不和同而把持行市,专取其利,及贩鬻之徒,通同牙行,共为奸计,卖物以贱为贵、买物以贵为贱者,杖八十。"
+  applies_to: [commerce, market_manipulation, fraud]
+  keywords: [垄断, 抬价, 欺行霸市, 强买强卖, 囤积, 哄抬, 以次充好, 缺斤短两]
+  consequence_hint: "杖八十,如有非法所得一并充公"
+
+- id: 大明律.户律.市廛.私造斛斗秤尺
+  category: 商业
+  source: 大明律·户律·市廛
+  era: 明代
+  text: "凡私造斛斗秤尺不平、在市行使、及将官降斛斗秤尺作弊增减者,杖六十,工匠同罪。"
+  applies_to: [commerce, fraudulent_measures, deception]
+  keywords: [秤, 斗, 短斤少两, 欺骗, 度量衡, 做手脚, 弄虚作假]
+  consequence_hint: "杖六十,作弊工具没收"
+
+- id: 大明律.户律.课程.匿税
+  category: 商业
+  source: 大明律·户律·课程
+  era: 明代
+  text: "凡客商匿税,及卖酒醋之家不纳课程者,笞五十。物货一半入官,于入官物内以十分为率,三分付告人充赏。"
+  applies_to: [commerce, tax_evasion, smuggling]
+  keywords: [税, 逃税, 漏税, 关津, 走私, 隐瞒, 酒税, 醋税]
+  consequence_hint: "笞五十,货物一半充公,告发者可得赏钱"
+
+- id: 大明律.户律.钱债.违禁取利
+  category: 商业
+  source: 大明律·户律·钱债
+  era: 明代
+  text: "凡私放钱债及典当财物,每月取利并不得过三分。年月虽多,不过一本一利。违者,笞四十。以余利计赃,重者坐赃论,罪止杖一百。"
+  applies_to: [commerce, usury, lending]
+  keywords: [利息, 借贷, 高利贷, 借据, 典当, 利滚利, 印子钱, 驴打滚]
+  consequence_hint: "笞四十,超收利息部分按赃物论处,最高杖一百"

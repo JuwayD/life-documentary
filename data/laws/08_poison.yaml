@@ -1,0 +1,20 @@
+# 大明律 - 毒药相关
+# 来源: 《大明律集解附例》
+
+- id: 大明律.刑律.毒物.造畜蛊毒
+  category: 毒物
+  source: 大明律·刑律·人命
+  era: 明代
+  text: "凡造畜蛊毒堪以杀人者,斩。教令者,绞。造畜者财产入官,妻子流三千里。"
+  applies_to: [poison, sorcery, murder_attempt]
+  keywords: [毒, 蛊, 毒药, 下毒, 鸩, 砒霜, 毒物]
+  consequence_hint: "造毒者斩,教唆者绞,家属流放"
+
+- id: 大明律.刑律.毒物.贩卖毒药
+  category: 毒物
+  source: 大明律·刑律·杂犯
+  era: 明代
+  text: "凡知情贩卖毒药者,杖一百,流三千里;不知者不坐。"
+  applies_to: [poison, selling, commerce]
+  keywords: [卖毒, 毒药买卖, 药铺毒药]
+  consequence_hint: "知情贩卖者杖一百流三千里"

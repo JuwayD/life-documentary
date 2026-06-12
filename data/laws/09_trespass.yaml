@@ -1,0 +1,20 @@
+# 大明律 - 擅入相关
+# 来源: 《大明律集解附例》
+
+- id: 大明律.刑律.擅入.擅入官署
+  category: 擅入
+  source: 大明律·刑律·杂犯
+  era: 明代
+  text: "凡无故擅入官署内者,笞四十;入仓库者,杖八十。"
+  applies_to: [trespass, government, warehouse]
+  keywords: [擅入, 闯入, 私入, 潜入, 官署, 仓库, 货栈]
+  consequence_hint: "擅入官署笞四十,擅入仓库杖八十"
+
+- id: 大明律.刑律.擅入.夜入民宅
+  category: 擅入
+  source: 大明律·刑律·贼盗
+  era: 明代
+  text: "凡夜无故入人家内者,杖八十;主家登时杀死者,勿论。"
+  applies_to: [trespass, night, private_home]
+  keywords: [夜入, 闯入民宅, 夜闯, 翻墙]
+  consequence_hint: "杖八十;主人当场击杀不追究"

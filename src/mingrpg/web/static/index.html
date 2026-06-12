@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>人生纪实 · 明朝篇</title>
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>人生纪实 · 明朝篇 <span class="ver">v0.2</span></h1>
+    <div class="topbar-actions">
+      <button id="btn-mobile-panel" class="mobile-panel-toggle" data-test="mobile-panel-toggle" aria-controls="side-panel" aria-expanded="false">状态面板</button>
+      <button id="btn-export-save" data-test="export-save">导出存档</button>
+      <button id="btn-import-save" data-test="import-save">导入存档</button>
+      <button id="btn-birth-settings" data-test="birth-settings">出生设置</button>
+      <button id="btn-debug-console" data-test="debug-console">开发者控制台</button>
+      <input id="save-file-input" type="file" accept="application/json" hidden />
+      <button id="btn-reset" data-test="reset">重置世界</button>
+      <button id="btn-audit" data-test="show-audit">查看日志</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- 左: PixiJS 场景视口 -->
+    <section class="viewport-area">
+      <div id="viewport" class="viewport" data-test="viewport"></div>
+    </section>
+
+    <!-- 中: 对话流 -->
+    <section class="chat-area">
+      <div id="chat" class="chat-log" data-test="chat"></div>
+      <form id="input-form" class="input-form">
+        <input
+          id="input"
+          name="input"
+          autocomplete="off"
+          placeholder="你打算如何应对?(中文自由输入)"
+          data-test="input"
+        />
+        <button type="submit" id="submit" data-test="submit">行动</button>
+      </form>
+      <div id="status" class="status-line" data-test="status"></div>
+    </section>
+
+    <!-- 右侧:世界状态面板 -->
+    <aside id="side-panel" class="side-panel">
+      <nav class="side-nav" aria-label="信息导航" data-test="side-nav">
+        <button type="button" data-side-nav="time" data-test="side-nav-situation">
+          <span class="side-nav-label">局势</span>
+          <span class="side-nav-badge" data-side-nav-badge="time" data-test="side-nav-badge-time">—</span>
+        </button>
+        <button type="button" data-side-nav="suggestions" data-test="side-nav-action">
+          <span class="side-nav-label">行动</span>
+          <span class="side-nav-badge" data-side-nav-badge="suggestions" data-test="side-nav-badge-suggestions">—</span>
+        </button>
+        <button type="button" data-side-nav="story" data-test="side-nav-story">
+          <span class="side-nav-label">剧情</span>
+          <span class="side-nav-badge" data-side-nav-badge="story" data-test="side-nav-badge-story">—</span>
+        </button>
+        <button type="button" data-side-nav="dialogue-history" data-test="side-nav-dialogue-history">
+          <span class="side-nav-label">对话</span>
+          <span class="side-nav-badge" data-side-nav-badge="dialogue-history" data-test="side-nav-badge-dialogue-history">—</span>
+        </button>
+        <button type="button" data-side-nav="quest" data-test="side-nav-quest">
+          <span class="side-nav-label">调查</span>
+          <span class="side-nav-badge" data-side-nav-badge="quest" data-test="side-nav-badge-quest">—</span>
+        </button>
+        <button type="button" data-side-nav="review" data-test="side-nav-review">
+          <span class="side-nav-label">复盘</span>
+          <span class="side-nav-badge" data-side-nav-badge="review" data-test="side-nav-badge-review">—</span>
+        </button>
+      </nav>
+      <div class="density-toggle" data-test="density-toggle" aria-label="信息密度">
+        <button type="button" data-density-mode="compact" data-test="density-compact">精简</button>
+        <button type="button" data-density-mode="detailed" data-test="density-detailed">详细</button>
+      </div>
+      <div class="panel-bulk-controls" data-test="panel-bulk-controls" aria-label="面板批量控制">
+        <button type="button" data-panel-bulk="expand" data-test="panel-expand-all">全部展开</button>
+        <button type="button" data-panel-bulk="collapse" data-test="panel-collapse-all">全部折叠</button>
+      </div>
+      <div class="panel-search" data-test="panel-search">
+        <input id="panel-search-input" type="search" placeholder="筛选面板或内容 (⌘/Ctrl+K)" data-test="panel-search-input" aria-label="筛选状态面板" />
+        <div id="panel-search-count" class="panel-search-count" data-test="panel-search-count">—</div>
+        <div id="panel-search-results" class="panel-search-results hidden" data-test="panel-search-results"></div>
+        <div id="panel-search-empty" class="panel-search-empty hidden" data-test="panel-search-empty">无匹配面板</div>
+      </div>
+      <div id="panel-context-notice" class="panel-context-notice hidden" data-test="panel-context-notice"></div>
+      <div class="keyboard-help" data-test="keyboard-help" aria-label="快捷键提示">
+        <strong>快捷键</strong>
+        <span><kbd>⌘/Ctrl</kbd> + <kbd>K</kbd> 搜索面板</span>
+        <span><kbd>Enter</kbd> 提交行动</span>
+      </div>
+      <div class="panel-section" data-panel-section="time">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="time" aria-expanded="true" data-test="toggle-time">时间</button></h3>
+        <div id="time-panel" data-panel-body data-test="time-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="weather">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="weather" aria-expanded="true" data-test="toggle-weather">天气</button></h3>
+        <div id="weather-panel" data-panel-body data-test="weather-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="summary">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="summary" aria-expanded="true" data-test="toggle-summary">局势摘要</button></h3>
+        <div id="summary-panel" data-panel-body data-test="summary-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="priority">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="priority" aria-expanded="true" data-test="toggle-priority">待处理重点</button></h3>
+        <div id="priority-panel" data-panel-body data-test="priority-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="recent">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="recent" aria-expanded="true" data-test="toggle-recent">最近变化</button></h3>
+        <div id="recent-panel" data-panel-body data-test="recent-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="gaps">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="gaps" aria-expanded="true" data-test="toggle-gaps">信息缺口</button></h3>
+        <div id="gaps-panel" data-panel-body data-test="gaps-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="player">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="player" aria-expanded="true" data-test="toggle-player">玩家</button></h3>
+        <div id="player-panel" data-panel-body data-test="player-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="location">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="location" aria-expanded="true" data-test="toggle-location">场景</button></h3>
+        <div id="location-panel" data-panel-body data-test="location-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="nearby">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="nearby" aria-expanded="true" data-test="toggle-nearby">附近的人</button></h3>
+        <div id="nearby-panel" data-panel-body data-test="nearby-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="relationships">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="relationships" aria-expanded="true" data-test="toggle-relationships">关系动态</button></h3>
+        <div id="relationships-panel" data-panel-body data-test="relationships-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="suggestions">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="suggestions" aria-expanded="true" data-test="toggle-suggestions">行动建议</button></h3>
+        <div id="suggestions-panel" data-panel-body data-test="suggestions-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="timeline">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="timeline" aria-expanded="true" data-test="toggle-timeline">事件时间线</button></h3>
+        <div id="timeline-panel" data-panel-body data-test="timeline-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="party">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="party" aria-expanded="true" data-test="toggle-party">队伍</button></h3>
+        <div id="party-panel" data-panel-body data-test="party-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="advisor">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="advisor" aria-expanded="true" data-test="toggle-advisor">顾问</button></h3>
+        <div id="advisor-panel" data-panel-body data-test="advisor-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="observation">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="observation" aria-expanded="true" data-test="toggle-observation">观察</button></h3>
+        <div id="observation-panel" data-panel-body data-test="observation-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="dialogue">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="dialogue" aria-expanded="true" data-test="toggle-dialogue">对话</button></h3>
+        <div id="dialogue-panel" data-panel-body data-test="dialogue-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="dialogue-history">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="dialogue-history" aria-expanded="true" data-test="toggle-dialogue-history">对话历史</button></h3>
+        <div id="dialogue-history-panel" data-panel-body data-test="dialogue-history-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="story">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="story" aria-expanded="true" data-test="toggle-story">主线剧情</button></h3>
+        <div id="story-panel" data-panel-body data-test="story-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="clues">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="clues" aria-expanded="true" data-test="toggle-clues">线索记录</button></h3>
+        <div id="clues-panel" data-panel-body data-test="clues-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="pressure">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="pressure" aria-expanded="true" data-test="toggle-pressure">压力钟</button></h3>
+        <div id="pressure-panel" data-panel-body data-test="pressure-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="quest">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="quest" aria-expanded="true" data-test="toggle-quest">调查进度</button></h3>
+        <div id="quest-panel" data-panel-body data-test="quest-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="ending">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="ending" aria-expanded="true" data-test="toggle-ending">结局</button></h3>
+        <div id="ending-panel" data-panel-body data-test="ending-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="skills">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="skills" aria-expanded="true" data-test="toggle-skills">修炼 / 技能</button></h3>
+        <div id="skills-panel" data-panel-body data-test="skills-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="evolutions">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="evolutions" aria-expanded="true" data-test="toggle-evolutions">世界演化</button></h3>
+        <div id="evolutions-panel" data-panel-body data-test="evolutions-panel">—</div>
+      </div>
+      <div class="panel-section" data-panel-section="review">
+        <h3><button class="panel-toggle" type="button" data-panel-toggle="review" aria-expanded="true" data-test="toggle-review">故事回顾</button></h3>
+        <div id="review-panel" data-panel-body data-test="review-panel">—</div>
+      </div>
+    </aside>
+  </main>
+
+  <div id="side-panel-backdrop" class="side-panel-backdrop" data-test="side-panel-backdrop"></div>
+
+  <!-- 出生设置弹层 -->
+  <div id="birth-modal" class="modal hidden" data-test="birth-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>出生设置</h2>
+        <button id="close-birth">×</button>
+      </div>
+      <div id="birth-body" class="birth-body" data-test="birth-body"></div>
+    </div>
+  </div>
+
+  <!-- 开发者控制台弹层 -->
+  <div id="debug-modal" class="modal hidden" data-test="debug-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>开发者控制台</h2>
+        <button id="close-debug">×</button>
+      </div>
+      <div id="debug-body" class="debug-body" data-test="debug-body"></div>
+    </div>
+  </div>
+
+  <!-- 审计日志弹层 -->
+  <div id="audit-modal" class="modal hidden" data-test="audit-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>决策审计日志</h2>
+        <button id="close-audit">×</button>
+      </div>
+      <div id="audit-body" class="audit-body" data-test="audit-body"></div>
+    </div>
+  </div>
+
+  <!-- 复盘弹层 -->
+  <div id="review-modal" class="modal hidden" data-test="review-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>故事回顾</h2>
+        <button id="close-review">×</button>
+      </div>
+      <div id="review-body" class="review-body" data-test="review-body"></div>
+    </div>
+  </div>
+
+  <!-- 回放播放器弹层 -->
+  <div id="replay-modal" class="modal hidden" data-test="replay-modal">
+    <div class="modal-content modal-wide">
+      <div class="modal-header">
+        <h2>回放播放器</h2>
+        <button id="close-replay">×</button>
+      </div>
+      <div id="replay-body" class="replay-body" data-test="replay-body"></div>
+    </div>
+  </div>
+
+  <script src="https://pixijs.download/v8.6.6/pixi.min.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

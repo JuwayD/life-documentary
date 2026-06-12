@@ -1,0 +1,20 @@
+# 大明律 - 教唆伪证与证人相关
+# 来源: 《大明律集解附例》
+
+- id: 大明律.刑律.诉讼.教唆词讼
+  category: 诉讼
+  source: 大明律·刑律·诉讼
+  era: 明代
+  text: "凡教唆词讼及为人作词状增减情罪诬告人者,与犯人同罪。"
+  applies_to: [witness_tampering, perjury, false_accusation]
+  keywords: [教唆, 伪证, 诬告, 假证, 串供, 威胁证人]
+  consequence_hint: "与被教唆者同罪"
+
+- id: 大明律.刑律.诉讼.证人翻供
+  category: 诉讼
+  source: 大明律·刑律·诉讼
+  era: 明代
+  text: "凡证佐不言实情故行诬证者,减罪人罪二等。"
+  applies_to: [perjury, false_testimony]
+  keywords: [翻供, 假证词, 匿情, 作伪证]
+  consequence_hint: "按所证之罪减二等处罚"
