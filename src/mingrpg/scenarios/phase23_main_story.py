@@ -20,7 +20,7 @@ CROSS_REGION_THREAD = {
     "title": "江南暗网",
     "hook": (
         "扬州吴员外的生意远不止码头货栈——瓜洲的夜渡、南京的科场、"
-        "苏州的丝税、杭州的茶运、淮安的漕运、徐州的铁器,处处有他的影子。若能将各地线索串联,"
+        "苏州的丝税、杭州的茶运、淮安的漕运、徐州的铁器、宁波的出海,处处有他的影子。若能将各地线索串联,"
         "或可揭开一张横跨江南的暗中交易网络。"
     ),
     "anchors": [
@@ -59,6 +59,13 @@ CROSS_REGION_THREAD = {
         {"location": "xuzhou_city_gate"},
         {"location": "xuzhou_yamen"},
         {"location": "xuzhou_inn"},
+        # Ningbo
+        {"entity": "ningbo_fanqin"},
+        {"entity": "ningbo_chief"},
+        {"entity": "ningbo_sea_merchant"},
+        {"location": "ningbo_dock"},
+        {"location": "ningbo_shipsi"},
+        {"location": "ningbo_tianyi"},
     ],
     "stakes": (
         "多线合一可迫使吴员外现身,但也会惊动他在府衙和商帮中的保护伞。"
@@ -131,6 +138,13 @@ INVESTIGATION_MILESTONES = [
         "title": "铁器暗运",
         "description": "在徐州发现吴员外的铁器走私路线,铁器从扬州经徐州北运。",
         "region": "xuzhou",
+        "status": "locked",
+    },
+    {
+        "id": "nb_sea_route",
+        "title": "海上暗线",
+        "description": "在宁波发现吴员外的货物从宁波码头出海,经远洋走私至南洋和日本。",
+        "region": "ningbo",
         "status": "locked",
     },
 ]
@@ -237,7 +251,7 @@ def seed_phase23_main_story(world: World) -> None:
     if wu:
         wu.setdefault("attributes", {})["is_investigation_target"] = True
         wu.setdefault("attributes", {})["network_regions"] = [
-            "yangzhou", "guazhou", "nanjing", "suzhou", "hangzhou", "huaian", "xuzhou",
+            "yangzhou", "guazhou", "nanjing", "suzhou", "hangzhou", "huaian", "xuzhou", "ningbo",
         ]
         world.save_entity(wu)
 

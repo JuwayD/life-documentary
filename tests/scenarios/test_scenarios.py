@@ -18,6 +18,7 @@ from mingrpg.scenarios.zhenjiang import seed_zhenjiang
 from mingrpg.scenarios.huaian import seed_huaian
 from mingrpg.scenarios.xuzhou import seed_xuzhou
 from mingrpg.scenarios.phase23_main_story import seed_phase23_main_story
+from mingrpg.scenarios.ningbo import seed_ningbo
 
 
 # ----- Market scenario -----
@@ -2277,7 +2278,7 @@ def test_phase23_quest_log_seeded():
     quest_log = world.get_flag("quest_log")
     assert quest_log is not None
     entries = quest_log["entries"]
-    assert len(entries) == 9
+    assert len(entries) == 10
 
     entry_ids = [e["id"] for e in entries]
     assert "yz_petition_filed" in entry_ids
@@ -2289,6 +2290,7 @@ def test_phase23_quest_log_seeded():
     assert "confrontation" in entry_ids
     assert "ha_grain_trail" in entry_ids
     assert "xz_iron_route" in entry_ids
+    assert "nb_sea_route" in entry_ids
 
 
 def test_phase23_quest_log_initial_statuses():
@@ -3119,4 +3121,234 @@ def test_seed_zhenjiang_ferryman_has_dialogue_lines():
     world = World(":memory:")
     seed_zhenjiang(world)
     npc = world.get_entity("xijin_ferryman")
+    _assert_dialogue_structure(npc["attributes"]["dialogue_lines"])
+
+
+# ----- Ningbo (Phase 36) -----
+
+def test_seed_ningbo_creates_locations():
+    world = World(":memory:")
+    seed_ningbo(world)
+    locs = {l["id"]: l for l in world.list_locations()}
+    assert "ningbo_dock" in locs
+    assert "ningbo_shipsi" in locs
+    assert "ningbo_tianyi" in locs
+    assert locs["ningbo_dock"]["name"] == "宁波码头"
+    assert locs["ningbo_shipsi"]["name"] == "宁波市舶司"
+    assert locs["ningbo_tianyi"]["name"] == "天一阁"
+
+
+def test_seed_ningbo_creates_npcs():
+    world = World(":memory:")
+    seed_ningbo(world)
+    e = world.get_entity("ningbo_fanqin")
+    assert e is not None
+    assert e["name"] == "范钦"
+    assert e["location"] == "ningbo_tianyi"
+
+    e = world.get_entity("ningbo_chief")
+    assert e is not None
+    assert e["name"] == "陈把总"
+    assert e["location"] == "ningbo_shipsi"
+
+    e = world.get_entity("ningbo_sea_merchant")
+    assert e is not None
+    assert e["name"] == "赵海商"
+    assert e["location"] == "ningbo_dock"
+
+
+def test_seed_ningbo_npcs_have_attributes():
+    world = World(":memory:")
+    seed_ningbo(world)
+    for npc_id in ("ningbo_fanqin", "ningbo_chief", "ningbo_sea_merchant"):
+        e = world.get_entity(npc_id)
+        assert "hp" in e["attributes"], f"{npc_id} missing hp"
+        assert "attack" in e["attributes"], f"{npc_id} missing attack"
+        assert "defense" in e["attributes"], f"{npc_id} missing defense"
+        assert "money_wen" in e["attributes"], f"{npc_id} missing money_wen"
+        assert "personality" in e["attributes"], f"{npc_id} missing personality"
+        assert "memories" in e["attributes"], f"{npc_id} missing memories"
+
+
+def test_seed_ningbo_npcs_have_schedules():
+    world = World(":memory:")
+    seed_ningbo(world)
+    for npc_id in ("ningbo_fanqin", "ningbo_chief", "ningbo_sea_merchant"):
+        e = world.get_entity(npc_id)
+        assert "schedule" in e["attributes"], f"{npc_id} missing schedule"
+        assert len(e["attributes"]["schedule"]) >= 3, f"{npc_id} schedule too short"
+
+
+def test_seed_ningbo_npcs_have_rumor_hooks():
+    world = World(":memory:")
+    seed_ningbo(world)
+    for npc_id in ("ningbo_fanqin", "ningbo_chief", "ningbo_sea_merchant"):
+        e = world.get_entity(npc_id)
+        hooks = e["attributes"].get("rumor_hooks", [])
+        assert len(hooks) >= 1, f"{npc_id} missing rumor_hooks"
+
+
+def test_seed_ningbo_npcs_have_inventory():
+    world = World(":memory:")
+    seed_ningbo(world)
+    for npc_id in ("ningbo_fanqin", "ningbo_chief", "ningbo_sea_merchant"):
+        e = world.get_entity(npc_id)
+        assert len(e.get("inventory", [])) >= 1, f"{npc_id} missing inventory"
+
+
+def test_seed_ningbo_npcs_have_observable_details():
+    world = World(":memory:")
+    seed_ningbo(world)
+    for npc_id in ("ningbo_fanqin", "ningbo_chief", "ningbo_sea_merchant"):
+        e = world.get_entity(npc_id)
+        assert len(e["attributes"].get("observable_details", [])) >= 1, (
+            f"{npc_id} missing observable_details"
+        )
+
+
+def test_seed_ningbo_npc_tags():
+    world = World(":memory:")
+    seed_ningbo(world)
+    fanqin = world.get_entity("ningbo_fanqin")
+    assert "scholar" in fanqin["tags"]
+    assert "retired_official" in fanqin["tags"]
+    chief = world.get_entity("ningbo_chief")
+    assert "official" in chief["tags"]
+    assert "military" in chief["tags"]
+    merchant = world.get_entity("ningbo_sea_merchant")
+    assert "merchant" in merchant["tags"]
+    assert "smuggler" in merchant["tags"]
+
+
+def test_seed_ningbo_fanqin_has_services():
+    world = World(":memory:")
+    seed_ningbo(world)
+    fanqin = world.get_entity("ningbo_fanqin")
+    services = fanqin["attributes"]["service_catalog"]
+    assert services["consult_archive"]["price_wen"] == 20
+    assert services["copy_document"]["price_wen"] == 30
+
+
+def test_seed_ningbo_chief_has_services():
+    world = World(":memory:")
+    seed_ningbo(world)
+    chief = world.get_entity("ningbo_chief")
+    services = chief["attributes"]["service_catalog"]
+    assert services["port_pass"]["price_wen"] == 50
+    assert services["ship_inquiry"]["price_wen"] == 30
+
+
+def test_seed_ningbo_sea_merchant_has_services():
+    world = World(":memory:")
+    seed_ningbo(world)
+    merchant = world.get_entity("ningbo_sea_merchant")
+    services = merchant["attributes"]["service_catalog"]
+    assert services["buy_seafood"]["price_wen"] == 15
+    assert services["arrange_passage"]["price_wen"] == 80
+
+
+def test_seed_ningbo_sea_merchant_has_price_list():
+    world = World(":memory:")
+    seed_ningbo(world)
+    merchant = world.get_entity("ningbo_sea_merchant")
+    prices = merchant["attributes"]["price_list"]
+    assert prices["dried_fish"] == 15
+    assert prices["sea_cucumber"] == 60
+    assert prices["pearl_strand"] == 200
+
+
+def test_seed_ningbo_wires_hangzhou_exit():
+    world = World(":memory:")
+    seed_hangzhou(world)
+    seed_ningbo(world)
+    hangzhou_dock = world.get_location("hangzhou_canal_dock")
+    assert "southeast_ningbo" in hangzhou_dock["exits"]
+    assert hangzhou_dock["exits"]["southeast_ningbo"] == "ningbo_dock"
+
+
+def test_seed_ningbo_locations_connected():
+    world = World(":memory:")
+    seed_ningbo(world)
+    dock = world.get_location("ningbo_dock")
+    assert "north" in dock["exits"]
+    assert dock["exits"]["north"] == "ningbo_shipsi"
+    assert "east" in dock["exits"]
+    assert dock["exits"]["east"] == "ningbo_tianyi"
+    shipsi = world.get_location("ningbo_shipsi")
+    assert "south" in shipsi["exits"]
+    assert shipsi["exits"]["south"] == "ningbo_dock"
+    tianyi = world.get_location("ningbo_tianyi")
+    assert "west" in tianyi["exits"]
+    assert tianyi["exits"]["west"] == "ningbo_dock"
+
+
+def test_seed_ningbo_evolution_registry():
+    world = World(":memory:")
+    seed_ningbo(world)
+    registry = world.get_flag("evolution_registry") or []
+    evo_ids = {e["entity_id"] for e in registry}
+    assert "ningbo_fanqin" in evo_ids
+    assert "ningbo_chief" in evo_ids
+    assert "ningbo_sea_merchant" in evo_ids
+
+
+def test_seed_ningbo_side_thread_created():
+    world = World(":memory:")
+    seed_yangzhou_districts(world)  # initialize story_seeds
+    seed_ningbo(world)
+    seeds = world.get_flag("story_seeds")
+    side_ids = [s["id"] for s in seeds.get("side_threads", [])]
+    assert "ningbo_sea_route" in side_ids
+
+
+def test_seed_ningbo_location_story_threads():
+    world = World(":memory:")
+    seed_yangzhou_districts(world)
+    seed_ningbo(world)
+    dock = world.get_location("ningbo_dock")
+    threads = dock.get("story_threads", [])
+    assert any(t["id"] == "ningbo_sea_route" for t in threads)
+
+
+def test_seed_ningbo_flag_set():
+    world = World(":memory:")
+    seed_ningbo(world)
+    assert world.get_flag("ningbo_seeded") is True
+
+
+def test_seed_ningbo_no_duplicate_seeding():
+    world = World(":memory:")
+    seed_yangzhou_districts(world)  # initialize story_seeds
+    seed_ningbo(world)
+    seed_ningbo(world)  # seed again
+
+    # No duplicate side threads
+    seeds = world.get_flag("story_seeds")
+    side_ids = [s["id"] for s in seeds.get("side_threads", [])]
+    assert len(side_ids) == len(set(side_ids))
+
+    # No duplicate rumor hooks
+    fanqin = world.get_entity("ningbo_fanqin")
+    hooks = fanqin["attributes"].get("rumor_hooks", [])
+    assert len(hooks) == len(set(hooks))
+
+
+def test_seed_ningbo_fanqin_has_dialogue_lines():
+    world = World(":memory:")
+    seed_ningbo(world)
+    npc = world.get_entity("ningbo_fanqin")
+    _assert_dialogue_structure(npc["attributes"]["dialogue_lines"])
+
+
+def test_seed_ningbo_chief_has_dialogue_lines():
+    world = World(":memory:")
+    seed_ningbo(world)
+    npc = world.get_entity("ningbo_chief")
+    _assert_dialogue_structure(npc["attributes"]["dialogue_lines"])
+
+
+def test_seed_ningbo_sea_merchant_has_dialogue_lines():
+    world = World(":memory:")
+    seed_ningbo(world)
+    npc = world.get_entity("ningbo_sea_merchant")
     _assert_dialogue_structure(npc["attributes"]["dialogue_lines"])

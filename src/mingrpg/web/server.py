@@ -30,6 +30,9 @@ from mingrpg.scenarios.nanjing import seed_nanjing
 from mingrpg.scenarios.suzhou import seed_suzhou
 from mingrpg.scenarios.hangzhou import seed_hangzhou
 from mingrpg.scenarios.zhenjiang import seed_zhenjiang
+from mingrpg.scenarios.huaian import seed_huaian
+from mingrpg.scenarios.xuzhou import seed_xuzhou
+from mingrpg.scenarios.ningbo import seed_ningbo
 from mingrpg.scenarios.phase23_main_story import seed_phase23_main_story
 
 
@@ -47,6 +50,9 @@ def seed_all(world: World) -> None:
     seed_suzhou(world)
     seed_hangzhou(world)
     seed_zhenjiang(world)
+    seed_huaian(world)
+    seed_xuzhou(world)
+    seed_ningbo(world)
     seed_phase23_main_story(world)
 
     # Seed initial weather based on season
