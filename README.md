@@ -16,7 +16,7 @@ python3 -m venv .venv
 .venv/bin/pip install -e ".[dev]"
 .venv/bin/playwright install chromium     # 仅 E2E 测试需要
 
-# 跑全部测试 (644+ 单元/E2E + 4 LLM 集成 skip,全过)
+# 跑全部测试 (752+ 单元/E2E + 4 LLM 集成 skip,全过)
 .venv/bin/pytest
 
 # 跑 live LLM 集成测试 (~4 分钟)
@@ -491,3 +491,12 @@ GM Agent 会:
 - ✓ NPC 态度卡片 sparkline 升级为大尺寸（含数据点和 hover tooltip）
 - ✓ ADR-0120 + 会话日志
 - ✓ 4 个新增覆盖测试
+
+**Phase 35 线索关联图可视化 完成** ✓
+- ✓ SVG 线索关联图（线程/线索/实体/地点节点 + 连接边）
+- ✓ 线程背景区域着色 + 实体/地点节点分类显示
+- ✓ 可折叠/展开交互,线索数≥2时显示
+- ✓ ADR-0121 + 会话日志
+- ✓ 3 个新增覆盖测试
+
+**测试总览**: 752+ 单元/E2E + 4 LLM 集成(可选 skip),全部通过。

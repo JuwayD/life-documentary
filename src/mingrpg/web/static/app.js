@@ -2438,6 +2438,16 @@ function renderCluesPanel(state) {
 
   const totalClues = entries.reduce((sum, entry) => sum + entry.clues.length, 0);
   let html = `<div class="clue-summary" data-test="clue-summary">共 ${totalClues} 条线索 · ${entries.length} 个线程</div>`;
+
+  // Clue connection graph
+  const clueGraph = buildClueGraph(progress, threadNames);
+  if (clueGraph && totalClues >= 2) {
+    html += `<div class="clue-graph" data-test="clue-graph">
+      <button type="button" class="clue-graph-toggle" data-test="clue-graph-toggle">关联图 ▾</button>
+      <div class="clue-graph-body">${renderClueGraphSvg(clueGraph)}</div>
+    </div>`;
+  }
+
   if (totalClues > 0) {
     const chronologicalEntries = Object.entries(progress)
       .map(([tid, tdata]) => ({
@@ -2480,6 +2490,17 @@ function renderCluesPanel(state) {
     }
   }
   $("#clues-panel").innerHTML = html;
+
+  // Clue graph toggle
+  const graphToggle = $("#clues-panel")?.querySelector(".clue-graph-toggle");
+  const graphBody = $("#clues-panel")?.querySelector(".clue-graph-body");
+  if (graphToggle && graphBody) {
+    graphToggle.addEventListener("click", () => {
+      const hidden = graphBody.style.display === "none";
+      graphBody.style.display = hidden ? "" : "none";
+      graphToggle.textContent = hidden ? "关联图 ▾" : "关联图 ▸";
+    });
+  }
 }
 
 function attachClueEvents(threadId, clues, events) {
@@ -2491,6 +2512,131 @@ function attachClueEvents(threadId, clues, events) {
     );
     return matched ? { ...clue, event_id: matched.id } : clue;
   });
+}
+
+/* ===== Clue Connection Graph (线索关联图) ===== */
+
+const CLUE_GRAPH_COLORS = ["#8b3a2f", "#2a6e8b", "#6b8b3a", "#8b6b2a", "#5a3a8b", "#3a8b6b", "#8b3a6b"];
+
+function buildClueGraph(progress, threadNames) {
+  if (!progress || Object.keys(progress).length === 0) return null;
+  const threads = Object.entries(progress)
+    .map(([tid, tdata]) => ({ tid, clues: tdata.clues || [], name: threadNames[tid] || tid }))
+    .filter((t) => t.clues.length > 0)
+    .sort((a, b) => (a.tid === "main_thread" ? -1 : b.tid === "main_thread" ? 1 : b.clues.length - a.clues.length));
+  if (threads.length === 0) return null;
+
+  const entities = new Map();
+  const locations = new Map();
+  const edges = [];
+  const nodes = [];
+  const PAD = 20, CW = 140, EW = 100, LW = 100;
+  const WIDTH = PAD * 2 + CW + EW + LW;
+
+  threads.forEach((thread, ti) => {
+    const color = CLUE_GRAPH_COLORS[ti % CLUE_GRAPH_COLORS.length];
+    thread.clues.forEach((clue, ci) => {
+      const nodeId = `c_${ti}_${ci}`;
+      nodes.push({ id: nodeId, type: "clue", label: (clue.clue || "").slice(0, 12), thread: thread.tid, threadIdx: ti, clueIdx: ci, color });
+      if (clue.source_entity) {
+        if (!entities.has(clue.source_entity)) entities.set(clue.source_entity, { id: clue.source_entity, indices: [] });
+        entities.get(clue.source_entity).indices.push(ti);
+        edges.push({ from: nodeId, to: `e_${clue.source_entity}`, type: "source" });
+      }
+      if (clue.location_id) {
+        if (!locations.has(clue.location_id)) locations.set(clue.location_id, { id: clue.location_id, indices: [] });
+        locations.get(clue.location_id).indices.push(ti);
+        edges.push({ from: nodeId, to: `l_${clue.location_id}`, type: "location" });
+      }
+    });
+  });
+
+  const maxClues = Math.max(...threads.map((t) => t.clues.length), 1);
+  const tHeights = threads.map((t) => Math.max(t.clues.length, 1) * 36 + 30);
+  const maxY = tHeights.reduce((s, h) => s + h, 0) + (threads.length - 1) * 12;
+  const HEIGHT = Math.max(120, maxY + PAD * 2);
+  const nodePos = {};
+
+  // Thread clue columns
+  let yOff = PAD;
+  threads.forEach((thread, ti) => {
+    const th = tHeights[ti];
+    const cx = PAD + CW / 2;
+    thread.clues.forEach((clue, ci) => {
+      nodePos[`c_${ti}_${ci}`] = { x: cx, y: yOff + 18 + ci * 36 };
+    });
+    thread._y0 = yOff;
+    thread._y1 = yOff + th;
+    thread._cx = cx;
+    yOff += th + 12;
+  });
+
+  // Entity column (right of clues)
+  const entArr = [...entities.values()].sort((a, b) => b.indices.length - a.indices.length);
+  entArr.forEach((ent, i) => {
+    const y = PAD + (i + 0.5) * (HEIGHT - PAD * 2) / Math.max(entArr.length, 1);
+    nodePos[`e_${ent.id}`] = { x: PAD + CW + 20 + EW / 2, y };
+  });
+
+  // Location column (right of entities)
+  const locArr = [...locations.values()].sort((a, b) => b.indices.length - a.indices.length);
+  locArr.forEach((loc, i) => {
+    const y = PAD + (i + 0.5) * (HEIGHT - PAD * 2) / Math.max(locArr.length, 1);
+    nodePos[`l_${loc.id}`] = { x: PAD + CW + 20 + EW + 20 + LW / 2, y };
+  });
+
+  return { nodes, edges, nodePos, threads, entities: entArr, locations: locArr, WIDTH, HEIGHT, PAD };
+}
+
+function renderClueGraphSvg(graph) {
+  if (!graph) return "";
+  const { nodes, edges, nodePos, threads, entities, locations, WIDTH, HEIGHT } = graph;
+  const escapeAttr = (s) => (s || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+
+  let svg = `<svg class="clue-graph-svg" viewBox="0 0 ${WIDTH} ${HEIGHT}" width="100%" height="${HEIGHT}" data-test="clue-graph-svg">`;
+
+  // Thread background regions
+  threads.forEach((thread, ti) => {
+    const color = CLUE_GRAPH_COLORS[ti % CLUE_GRAPH_COLORS.length];
+    svg += `<rect class="clue-graph-region" x="2" y="${thread._y0}" width="${140 + 10}" height="${thread._y1 - thread._y0}" rx="6" fill="${color}" opacity="0.06" stroke="${color}" stroke-opacity="0.15"/>`;
+    svg += `<text class="clue-graph-region-label" x="${thread._cx}" y="${thread._y0 + 14}" text-anchor="middle" fill="${color}" font-size="11" font-weight="600">${escapeAttr(thread.name)}</text>`;
+  });
+
+  // Edges
+  edges.forEach((edge) => {
+    const from = nodePos[edge.from];
+    const to = nodePos[edge.to];
+    if (!from || !to) return;
+    const cls = edge.type === "source" ? "clue-graph-edge-source" : "clue-graph-edge-location";
+    svg += `<line class="clue-graph-edge ${cls}" x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke="#999" stroke-opacity="0.4" stroke-width="1" stroke-dasharray="${edge.type === 'location' ? '3,2' : 'none'}"/>`;
+  });
+
+  // Clue nodes
+  nodes.forEach((node) => {
+    const pos = nodePos[node.id];
+    if (!pos) return;
+    svg += `<rect class="clue-graph-node" x="${pos.x - 58}" y="${pos.y - 10}" width="116" height="20" rx="4" fill="${node.color}" opacity="0.12" stroke="${node.color}" stroke-opacity="0.3"/>`;
+    svg += `<text class="clue-graph-node-label" x="${pos.x}" y="${pos.y + 4}" text-anchor="middle" fill="${node.color}" font-size="10">${escapeAttr(node.label)}</text>`;
+  });
+
+  // Entity nodes
+  entities.forEach((ent) => {
+    const pos = nodePos[`e_${ent.id}`];
+    if (!pos) return;
+    svg += `<circle class="clue-graph-entity" cx="${pos.x}" cy="${pos.y}" r="14" fill="#2a6e8b" opacity="0.12" stroke="#2a6e8b" stroke-opacity="0.3"/>`;
+    svg += `<text class="clue-graph-entity-label" x="${pos.x}" y="${pos.y + 4}" text-anchor="middle" fill="#2a6e8b" font-size="10">${escapeAttr(ent.id)}</text>`;
+  });
+
+  // Location nodes
+  locations.forEach((loc) => {
+    const pos = nodePos[`l_${loc.id}`];
+    if (!pos) return;
+    svg += `<rect class="clue-graph-location" x="${pos.x - 38}" y="${pos.y - 10}" width="76" height="20" rx="10" fill="#6b8b3a" opacity="0.12" stroke="#6b8b3a" stroke-opacity="0.3"/>`;
+    svg += `<text class="clue-graph-location-label" x="${pos.x}" y="${pos.y + 4}" text-anchor="middle" fill="#6b8b3a" font-size="9">${escapeAttr(loc.id)}</text>`;
+  });
+
+  svg += "</svg>";
+  return svg;
 }
 
 const QUEST_REGION_NAMES = {
