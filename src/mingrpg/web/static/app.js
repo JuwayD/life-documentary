@@ -1014,8 +1014,10 @@ function renderSideNavBadges(state) {
   setSideNavBadge("time", `${nearbyCount}人在场`, hasUrgentPressure);
   setSideNavBadge("suggestions", `${countSuggestedActions(state)}项`);
   setSideNavBadge("story", `${clueCount}线索`, clueCount > 0);
-  const dialogueCount = (state.events || []).filter((ev) => ev.type === "dialogue").length;
-  if (dialogueCount > 0) setSideNavBadge("dialogue-history", `${dialogueCount}次`);
+  const dialogueEvents = (state.events || []).filter((ev) => ev.type === "dialogue");
+  const dialogueCount = dialogueEvents.length;
+  const dialogueNpcs = new Set(dialogueEvents.map((ev) => ev.target).filter(Boolean)).size;
+  if (dialogueCount > 0) setSideNavBadge("dialogue-history", `${dialogueNpcs}NPC${dialogueCount}次`);
   const questEntries = ((state.flags || {}).quest_log || {}).entries || [];
   const questActive = questEntries.filter((e) => e.status === "active").length;
   const questCompleted = questEntries.filter((e) => e.status === "completed").length;
@@ -1988,8 +1990,33 @@ function renderDialoguePanel(state) {
 }
 
 // ===================================================================
-// Dialogue History panel (Phase 30)
+// Dialogue History panel (Phase 30, enhanced Phase 34)
 // ===================================================================
+function renderAttitudeSparkline(history, att, large) {
+  if (history.length < 2) return "";
+  // Convert deltas to cumulative values
+  const cumulative = [];
+  let sum = 0;
+  for (const d of history) { sum += d; cumulative.push(sum); }
+  const w = large ? 120 : 40, h = large ? 32 : 14;
+  const min = Math.min(...cumulative, 0);
+  const max = Math.max(...cumulative, 1);
+  const range = max - min || 1;
+  const step = w / Math.max(cumulative.length - 1, 1);
+  const pts = cumulative.map((v, i) =>
+    `${(i * step).toFixed(1)},${(h - ((v - min) / range) * h).toFixed(1)}`
+  ).join(" ");
+  const color = att >= 10 ? "#6a9a2a" : att <= -10 ? "#c44" : "#888";
+  // Dots on each data point when large
+  const dots = large ? cumulative.map((v, i) =>
+    `<circle cx="${(i * step).toFixed(1)}" cy="${(h - ((v - min) / range) * h).toFixed(1)}" r="2" fill="${color}"/>`
+  ).join("") : "";
+  const titleEl = large && cumulative.length > 0
+    ? `<title>起点 ${cumulative[0]}, 最终 ${cumulative[cumulative.length - 1]}</title>`
+    : "";
+  return `<svg class="attitude-sparkline" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${titleEl}<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="${large ? 2 : 1.5}" stroke-linecap="round" stroke-linejoin="round"/>${dots}</svg>`;
+}
+
 function renderDialogueHistoryPanel(state) {
   const events = (state.events || []).filter((ev) => ev.type === "dialogue");
   const panel = $("#dialogue-history-panel");
@@ -2014,6 +2041,7 @@ function renderDialogueHistoryPanel(state) {
         npcName: ev.target_name || npcId,
         entries: [],
         currentAttitude: 0,
+        deltas: [],
       };
     }
 
@@ -2027,19 +2055,81 @@ function renderDialogueHistoryPanel(state) {
 
     attitudeHistory[npcId].entries.push(entry);
     attitudeHistory[npcId].currentAttitude += entry.attitudeDelta;
+    attitudeHistory[npcId].deltas.push(entry.attitudeDelta);
+  }
+
+  // Collect filter data
+  const npcIds = Object.keys(attitudeHistory);
+  const allTopics = [...new Set(events.map((ev) => ev.topic).filter(Boolean))];
+
+  // --- Phase 34: topic statistics ---
+  const topicStats = {};
+  for (const ev of events) {
+    const t = ev.topic || "(无话题)";
+    if (!topicStats[t]) topicStats[t] = 0;
+    topicStats[t]++;
+  }
+  const sortedTopics = Object.entries(topicStats).sort((a, b) => b[1] - a[1]);
+
+  // --- Phase 34: attitude distribution ---
+  let friendlyCount = 0, neutralCount = 0, coldCount = 0;
+  for (const data of Object.values(attitudeHistory)) {
+    const a = data.currentAttitude;
+    if (a >= 10) friendlyCount++;
+    else if (a <= -10) coldCount++;
+    else neutralCount++;
   }
 
   // Render summary
-  const npcCount = Object.keys(attitudeHistory).length;
+  const npcCount = npcIds.length;
   const totalDialogues = events.length;
-  const recentDialogues = events.slice(-5).reverse();
 
   let html = `<div class="dialogue-history-summary" data-test="dialogue-history-summary">
     <div><span>对话总数</span><strong>${totalDialogues}</strong></div>
     <div><span>交谈 NPC</span><strong>${npcCount}</strong></div>
+    ${allTopics.length > 0 ? `<div><span>话题数</span><strong>${allTopics.length}</strong></div>` : ""}
   </div>`;
 
-  // Render attitude trends
+  // --- Phase 34: attitude distribution bar ---
+  if (npcCount > 1) {
+    const total = friendlyCount + neutralCount + coldCount;
+    html += `<div class="dialogue-history-att-dist" data-test="dialogue-history-att-dist">
+      <div class="dialogue-history-att-dist-bar">
+        ${friendlyCount > 0 ? `<span class="att-dist-friendly" style="width:${(friendlyCount / total * 100).toFixed(1)}%">友善 ${friendlyCount}</span>` : ""}
+        ${neutralCount > 0 ? `<span class="att-dist-neutral" style="width:${(neutralCount / total * 100).toFixed(1)}%">中立 ${neutralCount}</span>` : ""}
+        ${coldCount > 0 ? `<span class="att-dist-cold" style="width:${(coldCount / total * 100).toFixed(1)}%">冷淡 ${coldCount}</span>` : ""}
+      </div>
+    </div>`;
+  }
+
+  // --- Phase 34: topic statistics ---
+  if (sortedTopics.length > 1) {
+    const maxTopicCount = sortedTopics[0][1];
+    html += `<div class="dialogue-history-topic-stats" data-test="dialogue-history-topic-stats">
+      <div class="dialogue-history-topic-stats-title">话题分布</div>
+      ${sortedTopics.slice(0, 5).map(([topic, count]) =>
+        `<div class="dialogue-history-topic-bar-row">
+          <span class="dialogue-history-topic-bar-label">${escapeHtml(topic)}</span>
+          <div class="dialogue-history-topic-bar"><span style="width:${(count / maxTopicCount * 100).toFixed(1)}%"></span></div>
+          <span class="dialogue-history-topic-bar-count">${count}</span>
+        </div>`
+      ).join("")}
+    </div>`;
+  }
+
+  // Render NPC filter chips
+  html += `<div class="dialogue-history-filters" data-test="dialogue-history-filters">
+    <button type="button" class="quest-filter-chip active" data-dh-filter-type="npc" data-dh-filter-value="all">全部</button>
+    ${npcIds.map((id) => `<button type="button" class="quest-filter-chip" data-dh-filter-type="npc" data-dh-filter-value="${escapeAttr(id)}">${escapeHtml(attitudeHistory[id].npcName)}</button>`).join("")}
+  </div>`;
+
+  // --- Phase 34: search input ---
+  html += `<div class="dialogue-history-search" data-test="dialogue-history-search">
+    <input type="text" class="dialogue-search-input" placeholder="搜索对话内容…" data-test="dialogue-search-input" />
+    <span class="dialogue-search-count hidden" data-test="dialogue-search-count"></span>
+  </div>`;
+
+  // Render attitude trends with larger sparkline
   html += `<div class="dialogue-history-attitudes" data-test="dialogue-history-attitudes">`;
   for (const [npcId, data] of Object.entries(attitudeHistory)) {
     const att = data.currentAttitude;
@@ -2047,38 +2137,66 @@ function renderDialogueHistoryPanel(state) {
     const attCls = att >= 10 ? "att-positive" : att <= -10 ? "att-negative" : "att-neutral";
     const trendIcon = att > 0 ? "↑" : att < 0 ? "↓" : "→";
     const dialogueCount = data.entries.length;
+    const sparkline = renderAttitudeSparkline(data.deltas, att, true);
+    const positiveCount = data.entries.filter((e) => e.attitudeDelta > 0).length;
+    const negativeCount = data.entries.filter((e) => e.attitudeDelta < 0).length;
 
-    html += `<div class="dialogue-history-npc" data-test="dialogue-history-npc-${npcId}">
+    html += `<div class="dialogue-history-npc" data-test="dialogue-history-npc-${npcId}" data-npc-id="${escapeAttr(npcId)}">
       <div class="dialogue-history-npc-header">
         <span class="dialogue-history-npc-name">${escapeHtml(data.npcName)}</span>
         <span class="dialogue-history-npc-attitude ${attCls}">${attLabel} (${att >= 0 ? "+" : ""}${att}) ${trendIcon}</span>
       </div>
+      <div class="dialogue-history-npc-chart">${sparkline}</div>
       <div class="dialogue-history-npc-stats">
         <span>对话 ${dialogueCount} 次</span>
+        <span>好感 ${positiveCount} · 恶感 ${negativeCount}</span>
         <span>最近话题: ${escapeHtml(data.entries[0]?.topic || "无")}</span>
       </div>
     </div>`;
   }
   html += `</div>`;
 
-  // Render recent dialogue timeline
+  // Topic filter
+  if (allTopics.length > 1) {
+    html += `<div class="dialogue-history-topic-filters" data-test="dialogue-history-topic-filters">
+      <span class="dialogue-history-topic-label">话题:</span>
+      <button type="button" class="quest-filter-chip active" data-dh-filter-type="topic" data-dh-filter-value="all">全部</button>
+      ${allTopics.map((t) => `<button type="button" class="quest-filter-chip" data-dh-filter-type="topic" data-dh-filter-value="${escapeAttr(t)}">${escapeHtml(t)}</button>`).join("")}
+    </div>`;
+  }
+
+  // --- Phase 34: export + load more ---
+  html += `<div class="dialogue-history-actions" data-test="dialogue-history-actions">
+    <button type="button" class="dialogue-export-btn" data-test="dialogue-export-btn">导出对话历史</button>
+    ${events.length > 20 ? `<span class="dialogue-history-more-count">共 ${events.length} 条，显示最近 20</span>` : ""}
+  </div>`;
+
+  // Render dialogue timeline (show up to 20)
+  const recentDialogues = events.slice(-20).reverse();
   html += `<div class="dialogue-history-timeline" data-test="dialogue-history-timeline">
-    <h4>最近对话</h4>`;
+    <div class="dialogue-history-timeline-header">
+      <h4>对话记录</h4>
+      <span class="dialogue-history-timeline-count">${events.length} 条${events.length > 20 ? ` · 最近 20` : ""}</span>
+    </div>`;
 
   for (const ev of recentDialogues) {
     const npcName = ev.target_name || ev.target || "未知";
-    const topic = ev.topic ? `<span class="dialogue-history-topic">${escapeHtml(ev.topic)}</span>` : "";
+    const npcId = ev.target || "";
+    const topic = ev.topic || "";
+    const topicHtml = topic ? `<span class="dialogue-history-topic">${escapeHtml(topic)}</span>` : "";
     const playerLine = ev.player_line ? `<div class="dialogue-history-player">「${escapeHtml(ev.player_line)}」</div>` : "";
     const npcResponse = ev.npc_response ? `<div class="dialogue-history-npc-response">「${escapeHtml(ev.npc_response)}」</div>` : "";
     const attDelta = ev.attitude_delta || 0;
     const attDeltaHtml = attDelta !== 0
       ? `<span class="dialogue-history-attitude-delta ${attDelta > 0 ? "att-positive" : "att-negative"}">${attDelta > 0 ? "+" : ""}${attDelta}</span>`
       : "";
+    const turn = ev.turn != null ? `<span class="dialogue-history-turn">#${ev.turn}</span>` : "";
 
-    html += `<div class="dialogue-history-entry" data-test="dialogue-history-entry-${ev.id || ""}">
+    html += `<div class="dialogue-history-entry" data-test="dialogue-history-entry-${ev.id || ""}" data-npc-id="${escapeAttr(npcId)}" data-topic="${escapeAttr(topic)}" data-searchable="${escapeAttr(((ev.player_line || "") + " " + (ev.npc_response || "")).toLowerCase())}">
       <div class="dialogue-history-entry-header">
         <span class="dialogue-history-npc-label">${escapeHtml(npcName)}</span>
-        ${topic}
+        ${topicHtml}
+        ${turn}
         ${attDeltaHtml}
       </div>
       ${playerLine}
@@ -2087,8 +2205,129 @@ function renderDialogueHistoryPanel(state) {
   }
 
   html += `</div>`;
-
   panel.innerHTML = html;
+
+  // Wire up filter interactivity
+  const filtersContainer = panel.querySelector(".dialogue-history-filters");
+  const topicFiltersContainer = panel.querySelector(".dialogue-history-topic-filters");
+  const attitudeSection = panel.querySelector(".dialogue-history-attitudes");
+  const timelineList = panel.querySelector(".dialogue-history-timeline");
+  const searchInput = panel.querySelector(".dialogue-search-input");
+  const searchCount = panel.querySelector(".dialogue-search-count");
+  const exportBtn = panel.querySelector(".dialogue-export-btn");
+
+  function applyDialogueFilters() {
+    // Determine active NPC filter
+    const activeNpcChips = filtersContainer.querySelectorAll("[data-dh-filter-type='npc'].active");
+    const activeNpcs = new Set([...activeNpcChips].map((c) => c.dataset.dhFilterValue));
+    const showAllNpcs = activeNpcs.has("all");
+
+    // Determine active topic filter
+    let activeTopics = null;
+    if (topicFiltersContainer) {
+      const activeTopicChips = topicFiltersContainer.querySelectorAll("[data-dh-filter-type='topic'].active");
+      const topicVals = [...activeTopicChips].map((c) => c.dataset.dhFilterValue);
+      if (!topicVals.includes("all")) activeTopics = new Set(topicVals);
+    }
+
+    // Determine search text
+    const searchTerm = (searchInput?.value || "").trim().toLowerCase();
+
+    // Filter attitude cards
+    if (attitudeSection) {
+      attitudeSection.querySelectorAll(".dialogue-history-npc").forEach((card) => {
+        const cardNpc = card.dataset.npcId;
+        card.style.display = (showAllNpcs || activeNpcs.has(cardNpc)) ? "" : "none";
+      });
+    }
+
+    // Filter timeline entries
+    let visibleCount = 0;
+    if (timelineList) {
+      timelineList.querySelectorAll(".dialogue-history-entry").forEach((entry) => {
+        const entryNpc = entry.dataset.npcId;
+        const entryTopic = entry.dataset.topic;
+        const searchable = entry.dataset.searchable || "";
+        const npcMatch = showAllNpcs || activeNpcs.has(entryNpc);
+        const topicMatch = !activeTopics || activeTopics.has(entryTopic);
+        const searchMatch = !searchTerm || searchable.includes(searchTerm);
+        const visible = npcMatch && topicMatch && searchMatch;
+        entry.style.display = visible ? "" : "none";
+        if (visible) visibleCount++;
+      });
+    }
+
+    // Update search count
+    if (searchCount) {
+      if (searchTerm) {
+        const totalCount = timelineList?.querySelectorAll(".dialogue-history-entry").length || 0;
+        searchCount.textContent = `${visibleCount}/${totalCount} 条`;
+        searchCount.classList.remove("hidden");
+      } else {
+        searchCount.classList.add("hidden");
+      }
+    }
+  }
+
+  function setupChipGroup(container, filterType) {
+    if (!container) return;
+    container.addEventListener("click", (e) => {
+      const chip = e.target.closest(".quest-filter-chip");
+      if (!chip) return;
+      const value = chip.dataset.dhFilterValue;
+
+      if (value === "all") {
+        container.querySelectorAll(`[data-dh-filter-type='${filterType}']`).forEach((c) => c.classList.remove("active"));
+        chip.classList.add("active");
+      } else {
+        const allChip = container.querySelector(`[data-dh-filter-value="all"]`);
+        if (allChip) allChip.classList.remove("active");
+        chip.classList.toggle("active");
+        const anyActive = container.querySelector(`[data-dh-filter-type='${filterType}'].active`);
+        if (!anyActive && allChip) allChip.classList.add("active");
+      }
+      applyDialogueFilters();
+    });
+  }
+
+  setupChipGroup(filtersContainer, "npc");
+  setupChipGroup(topicFiltersContainer, "topic");
+
+  // Wire up search
+  if (searchInput) {
+    searchInput.addEventListener("input", applyDialogueFilters);
+  }
+
+  // Wire up export
+  if (exportBtn) {
+    exportBtn.addEventListener("click", () => {
+      const lines = [];
+      lines.push("人生纪实 · 对话历史导出");
+      lines.push("=".repeat(40));
+      lines.push(`导出时间: ${new Date().toLocaleString("zh-CN")}`);
+      lines.push(`对话总数: ${totalDialogues}, NPC 数: ${npcCount}`);
+      lines.push("");
+      for (const ev of events) {
+        const npcName = ev.target_name || ev.target || "未知";
+        const topic = ev.topic || "";
+        const turn = ev.turn != null ? `#${ev.turn}` : "";
+        const attDelta = ev.attitude_delta || 0;
+        const deltaStr = attDelta !== 0 ? ` [态度${attDelta > 0 ? "+" : ""}${attDelta}]` : "";
+        lines.push(`[${turn}] ${npcName}${topic ? " · " + topic : ""}${deltaStr}`);
+        if (ev.player_line) lines.push(`  玩家: ${ev.player_line}`);
+        if (ev.npc_response) lines.push(`  ${npcName}: ${ev.npc_response}`);
+        lines.push("");
+      }
+      const text = lines.join("\n");
+      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `dialogue-history-${Date.now()}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
 }
 
 // ===================================================================
@@ -2286,23 +2525,38 @@ function renderQuestLogPanel(state) {
     <div><span>地区</span><strong>${regions.length}</strong></div>
   </div>`;
 
-  // Cross-region investigation flow map
+  // Cross-region investigation flow map with clue counts
   const activeRegions = new Set(entries.filter((e) => e.status === "active").map((e) => e.region));
   const completedRegions = new Set(entries.filter((e) => e.status === "completed").map((e) => e.region));
   const hasAnyRegion = QUEST_REGION_CHAIN.some((r) => activeRegions.has(r) || completedRegions.has(r));
   if (hasAnyRegion) {
+    // Get clue counts per region from story progress
+    const storyProgress = flags.story_progress || {};
+    const storyThreads = flags.story_threads || {};
+    const clueCountsByRegion = {};
+    for (const [threadId, prog] of Object.entries(storyProgress)) {
+      const thread = storyThreads[threadId] || {};
+      const threadRegion = thread.region || "yangzhou";
+      const clueCount = ((prog || {}).clues || []).length;
+      clueCountsByRegion[threadRegion] = (clueCountsByRegion[threadRegion] || 0) + clueCount;
+    }
+
     const nodes = QUEST_REGION_CHAIN.map((r) => {
       const rEntries = entries.filter((e) => e.region === r);
       const rCompleted = rEntries.filter((e) => e.status === "completed").length;
       const rTotal = rEntries.length;
+      const clueCount = clueCountsByRegion[r] || 0;
       let cls = "locked";
       if (activeRegions.has(r)) cls = "active";
       else if (rCompleted === rTotal && rTotal > 0) cls = "completed";
       const label = QUEST_REGION_NAMES[r] || r;
-      return `<div class="quest-flow-node ${cls}" data-test="quest-flow-${r}">
+      return `<div class="quest-flow-node ${cls}" data-test="quest-flow-${r}" data-region="${escapeAttr(r)}">
         <span class="quest-flow-dot"></span>
         <span class="quest-flow-label">${escapeHtml(label)}</span>
-        ${rTotal > 0 ? `<span class="quest-flow-count">${rCompleted}/${rTotal}</span>` : ""}
+        <div class="quest-flow-stats">
+          ${rTotal > 0 ? `<span class="quest-flow-count">${rCompleted}/${rTotal}</span>` : ""}
+          ${clueCount > 0 ? `<span class="quest-flow-clues" title="线索数">${clueCount} 线索</span>` : ""}
+        </div>
       </div>`;
     });
     const connectors = QUEST_REGION_CHAIN.slice(0, -1).map((r, i) => {
@@ -2318,6 +2572,9 @@ function renderQuestLogPanel(state) {
       if (i < connectors.length) flowHtml += connectors[i];
     }
     html += `<div class="quest-flow" data-test="quest-flow">${flowHtml}</div>`;
+
+    // Region detail expandable area
+    html += `<div class="quest-flow-detail" data-test="quest-flow-detail" style="display:none"></div>`;
   }
 
   // Region progress summary
@@ -2369,26 +2626,148 @@ function renderQuestLogPanel(state) {
     }
   }
 
-  // Quest event timeline
+  // Quest event timeline with filters
   const questEvents = (state.events || []).filter((ev) => ev.type === "quest_log");
   if (questEvents.length > 0) {
     const timelineEvents = isCompactDensity() ? questEvents.slice(-5) : questEvents.slice(-10);
+
+    // Collect unique regions and statuses for filter chips
+    const tlRegions = [...new Set(questEvents.map((ev) => ev.region).filter(Boolean))];
+    const tlStatuses = [...new Set(questEvents.map((ev) => ev.status).filter(Boolean))];
+    const statusLabels = { active: "进行中", completed: "已完成", locked: "未解锁" };
+    const statusIcons = { completed: "✓", active: "◉", locked: "○" };
+
+    // Summary stats
+    const totalQuestEvents = questEvents.length;
+    const recentRegion = questEvents[questEvents.length - 1]?.region;
+    const recentRegionLabel = recentRegion ? (QUEST_REGION_NAMES[recentRegion] || recentRegion) : "";
+
     html += `<div class="quest-timeline" data-test="quest-timeline">
-      <div class="quest-timeline-title">调查时间线</div>
-      ${timelineEvents.map((ev) => {
-        const regionLabel = ev.region ? (QUEST_REGION_NAMES[ev.region] || ev.region) : "";
-        const statusIcon = ev.status === "completed" ? "✓" : ev.status === "active" ? "◉" : "○";
-        const statusCls = ev.status === "completed" ? "completed" : ev.status === "active" ? "active" : "locked";
-        return `<div class="quest-timeline-item ${statusCls}">
-          <span class="quest-timeline-icon">${statusIcon}</span>
-          <span class="quest-timeline-text">${escapeHtml(ev.summary || ev.entry_id || "")}</span>
-          ${regionLabel ? `<span class="quest-timeline-region">${escapeHtml(regionLabel)}</span>` : ""}
-        </div>`;
-      }).join("")}
+      <div class="quest-timeline-header">
+        <div class="quest-timeline-title">调查时间线</div>
+        <div class="quest-timeline-summary">${totalQuestEvents} 条记录${recentRegionLabel ? ` · 最近: ${escapeHtml(recentRegionLabel)}` : ""}</div>
+      </div>
+      <div class="quest-timeline-filters" data-test="quest-timeline-filters">
+        <button type="button" class="quest-filter-chip active" data-filter-type="region" data-filter-value="all">全部</button>
+        ${tlRegions.map((r) => `<button type="button" class="quest-filter-chip" data-filter-type="region" data-filter-value="${escapeAttr(r)}">${escapeHtml(QUEST_REGION_NAMES[r] || r)}</button>`).join("")}
+        ${tlStatuses.length > 1 ? tlStatuses.map((s) => `<button type="button" class="quest-filter-chip" data-filter-type="status" data-filter-value="${escapeAttr(s)}">${statusLabels[s] || s}</button>`).join("") : ""}
+      </div>
+      <div class="quest-timeline-list" data-test="quest-timeline-list">
+        ${timelineEvents.map((ev) => {
+          const regionLabel = ev.region ? (QUEST_REGION_NAMES[ev.region] || ev.region) : "";
+          const statusIcon = statusIcons[ev.status] || "○";
+          const statusCls = ev.status || "locked";
+          const timestamp = ev.timestamp ? ` · ${formatTimestamp(ev.timestamp)}` : "";
+          return `<div class="quest-timeline-item ${statusCls}" data-region="${escapeAttr(ev.region || "")}" data-status="${escapeAttr(ev.status || "")}">
+            <span class="quest-timeline-icon">${statusIcon}</span>
+            <span class="quest-timeline-text">${escapeHtml(ev.summary || ev.entry_id || "")}</span>
+            <div class="quest-timeline-meta">
+              ${regionLabel ? `<span class="quest-timeline-region">${escapeHtml(regionLabel)}</span>` : ""}
+              ${timestamp ? `<span class="quest-timeline-time">${timestamp}</span>` : ""}
+            </div>
+          </div>`;
+        }).join("")}
+      </div>
     </div>`;
   }
 
   $("#quest-panel").innerHTML = html;
+
+  // Quest timeline filter interactivity
+  const filtersContainer = $("#quest-panel")?.querySelector(".quest-timeline-filters");
+  const timelineList = $("#quest-panel")?.querySelector(".quest-timeline-list");
+  if (filtersContainer && timelineList) {
+    filtersContainer.addEventListener("click", (e) => {
+      const chip = e.target.closest(".quest-filter-chip");
+      if (!chip) return;
+      const filterType = chip.dataset.filterType;
+      const filterValue = chip.dataset.filterValue;
+
+      // Toggle active state
+      if (filterType === "region" && filterValue === "all") {
+        filtersContainer.querySelectorAll("[data-filter-type='region']").forEach((c) => c.classList.remove("active"));
+        chip.classList.add("active");
+      } else {
+        const allChip = filtersContainer.querySelector('[data-filter-value="all"]');
+        if (allChip) allChip.classList.remove("active");
+        chip.classList.toggle("active");
+        // If no chip is active, activate "all"
+        const anyActive = filtersContainer.querySelector(".quest-filter-chip.active");
+        if (!anyActive && allChip) allChip.classList.add("active");
+      }
+
+      // Determine active filters
+      const activeRegions = new Set();
+      const activeStatuses = new Set();
+      filtersContainer.querySelectorAll(".quest-filter-chip.active").forEach((c) => {
+        if (c.dataset.filterType === "region") activeRegions.add(c.dataset.filterValue);
+        if (c.dataset.filterType === "status") activeStatuses.add(c.dataset.filterValue);
+      });
+      const showAll = activeRegions.has("all");
+
+      // Filter timeline items
+      timelineList.querySelectorAll(".quest-timeline-item").forEach((item) => {
+        const itemRegion = item.dataset.region;
+        const itemStatus = item.dataset.status;
+        const regionMatch = showAll || activeRegions.has(itemRegion);
+        const statusMatch = activeStatuses.size === 0 || activeStatuses.has(itemStatus);
+        item.style.display = regionMatch && statusMatch ? "" : "none";
+      });
+    });
+  }
+
+  // Quest flow node click to expand region details
+  const flowContainer = $("#quest-panel")?.querySelector(".quest-flow");
+  const detailContainer = $("#quest-panel")?.querySelector(".quest-flow-detail");
+  if (flowContainer && detailContainer) {
+    flowContainer.addEventListener("click", (e) => {
+      const node = e.target.closest(".quest-flow-node");
+      if (!node) return;
+      const region = node.dataset.region;
+      if (!region) return;
+
+      // Toggle active state
+      const wasActive = node.classList.contains("selected");
+      flowContainer.querySelectorAll(".quest-flow-node").forEach((n) => n.classList.remove("selected"));
+      if (!wasActive) {
+        node.classList.add("selected");
+        // Show detail for this region
+        const regionEntries = entries.filter((entry) => entry.region === region);
+        const regionLabel = QUEST_REGION_NAMES[region] || region;
+        if (regionEntries.length > 0) {
+          detailContainer.style.display = "block";
+          detailContainer.innerHTML = `<div class="quest-flow-detail-header">
+            <span class="quest-flow-detail-title">${escapeHtml(regionLabel)} 调查详情</span>
+            <button type="button" class="quest-flow-detail-close" data-test="quest-flow-detail-close">×</button>
+          </div>
+          <div class="quest-flow-detail-entries">
+            ${regionEntries.map((entry) => {
+              const statusLabel = entry.status === "active" ? "◉" : entry.status === "completed" ? "✓" : "○";
+              const statusCls = entry.status || "locked";
+              return `<div class="quest-flow-detail-entry ${statusCls}">
+                <span class="quest-flow-detail-icon">${statusLabel}</span>
+                <div class="quest-flow-detail-content">
+                  <div class="quest-flow-detail-entry-title">${escapeHtml(entry.title || entry.id)}</div>
+                  ${entry.description ? `<div class="quest-flow-detail-entry-desc">${escapeHtml(entry.description)}</div>` : ""}
+                </div>
+              </div>`;
+            }).join("")}
+          </div>`;
+        } else {
+          detailContainer.style.display = "none";
+        }
+      } else {
+        detailContainer.style.display = "none";
+      }
+    });
+
+    detailContainer.addEventListener("click", (e) => {
+      if (e.target.closest(".quest-flow-detail-close")) {
+        detailContainer.style.display = "none";
+        flowContainer.querySelectorAll(".quest-flow-node").forEach((n) => n.classList.remove("selected"));
+      }
+    });
+  }
 }
 
 function renderPressurePanel(state) {
@@ -4556,6 +4935,20 @@ function escapeHtml(s) {
 
 function escapeAttr(s) {
   return escapeHtml(s).replace(/"/g, "&quot;");
+}
+
+function formatTimestamp(ts) {
+  if (!ts) return "";
+  // If already a relative string like "第3回合" or "卯时", return as-is
+  if (/回合|时|刻/.test(ts)) return ts;
+  // Try parsing as ISO date
+  try {
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return ts;
+    return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+  } catch {
+    return ts;
+  }
 }
 
 function showOpening() {

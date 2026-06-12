@@ -2206,9 +2206,33 @@ html, body {
 }
 .quest-flow-node.active .quest-flow-label { color: var(--accent); font-weight: bold; }
 .quest-flow-node.completed .quest-flow-label { color: #6c8d3f; }
+.quest-flow-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
 .quest-flow-count {
   font-size: 0.58rem;
   color: var(--muted);
+}
+.quest-flow-clues {
+  font-size: 0.54rem;
+  color: var(--accent);
+  opacity: 0.8;
+}
+.quest-flow-node {
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.quest-flow-node:hover {
+  background: rgba(0,0,0,0.04);
+}
+.quest-flow-node.selected {
+  background: rgba(74,109,167,0.1);
+  box-shadow: 0 0 0 1px var(--accent);
 }
 .quest-flow-connector {
   flex: 0 0 16px;
@@ -2223,30 +2247,144 @@ html, body {
   background: linear-gradient(to right, var(--accent), var(--line));
 }
 
+/* Quest flow detail expandable area */
+.quest-flow-detail {
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+  background: rgba(0,0,0,0.02);
+}
+.quest-flow-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.quest-flow-detail-title {
+  font-size: 0.72rem;
+  font-weight: bold;
+  color: var(--muted);
+}
+.quest-flow-detail-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0 2px;
+  line-height: 1;
+}
+.quest-flow-detail-close:hover {
+  color: var(--text);
+}
+.quest-flow-detail-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.quest-flow-detail-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.7rem;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.5);
+}
+.quest-flow-detail-icon {
+  flex-shrink: 0;
+  width: 14px;
+  text-align: center;
+  font-size: 0.65rem;
+  margin-top: 1px;
+}
+.quest-flow-detail-entry.active .quest-flow-detail-icon { color: var(--accent); }
+.quest-flow-detail-entry.completed .quest-flow-detail-icon { color: #6c8d3f; }
+.quest-flow-detail-entry.locked .quest-flow-detail-icon { color: var(--muted); }
+.quest-flow-detail-content {
+  flex: 1;
+}
+.quest-flow-detail-entry-title {
+  font-size: 0.68rem;
+  color: var(--text);
+}
+.quest-flow-detail-entry-desc {
+  font-size: 0.6rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
 /* Quest event timeline */
 .quest-timeline {
   margin-top: 10px;
   border-top: 1px solid var(--line);
   padding-top: 6px;
 }
+.quest-timeline-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+}
 .quest-timeline-title {
   font-size: 0.72rem;
   font-weight: bold;
   color: var(--muted);
-  margin-bottom: 4px;
+}
+.quest-timeline-summary {
+  font-size: 0.62rem;
+  color: var(--muted);
+}
+.quest-timeline-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.quest-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.6rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.quest-filter-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.quest-filter-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.quest-timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 .quest-timeline-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   font-size: 0.72rem;
-  padding: 2px 0;
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+.quest-timeline-item:last-child {
+  border-bottom: none;
 }
 .quest-timeline-icon {
   flex-shrink: 0;
   width: 14px;
   text-align: center;
   font-size: 0.68rem;
+  margin-top: 1px;
 }
 .quest-timeline-item.active .quest-timeline-icon { color: var(--accent); }
 .quest-timeline-item.completed .quest-timeline-icon { color: #6c8d3f; }
@@ -2257,10 +2395,22 @@ html, body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.quest-timeline-region {
-  font-size: 0.62rem;
-  color: var(--muted);
+.quest-timeline-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   flex-shrink: 0;
+}
+.quest-timeline-region {
+  font-size: 0.6rem;
+  color: var(--muted);
+  background: rgba(0,0,0,0.04);
+  padding: 0 4px;
+  border-radius: 3px;
+}
+.quest-timeline-time {
+  font-size: 0.6rem;
+  color: var(--muted);
 }
 
 .pressure-clock {
@@ -3199,27 +3349,58 @@ html, body {
 .dialogue-btn { font-size: .8em; padding: 3px 10px; cursor: pointer; background: var(--accent); color: #fff; border: none; border-radius: 4px; margin-top: 4px; }
 .dialogue-btn:hover { opacity: .85; }
 
-/* Dialogue History Panel (Phase 30) */
+/* Dialogue History Panel (Phase 30, enhanced Phase 34) */
 .dialogue-history-summary { display: flex; gap: 12px; margin-bottom: 10px; font-size: .85em; }
 .dialogue-history-summary div { display: flex; gap: 4px; }
 .dialogue-history-summary span { color: #666; }
 .dialogue-history-summary strong { color: var(--accent); }
+.dialogue-history-filters { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
 .dialogue-history-attitudes { margin-bottom: 12px; }
 .dialogue-history-npc { padding: 6px 8px; background: var(--paper-dark); border-radius: 5px; margin-bottom: 6px; }
 .dialogue-history-npc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
 .dialogue-history-npc-name { font-weight: bold; font-size: .9em; }
-.dialogue-history-npc-attitude { font-size: .8em; padding: 1px 6px; border-radius: 3px; }
+.dialogue-history-npc-attitude { font-size: .8em; padding: 1px 6px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px; }
 .dialogue-history-npc-stats { font-size: .78em; color: #666; }
 .dialogue-history-npc-stats span { margin-right: 8px; }
+.attitude-sparkline { vertical-align: middle; }
+.dialogue-history-topic-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-bottom: 8px; }
+.dialogue-history-topic-label { font-size: .75em; color: #666; }
 .dialogue-history-timeline { margin-top: 10px; }
-.dialogue-history-timeline h4 { font-size: .85em; color: #666; margin-bottom: 6px; }
+.dialogue-history-timeline-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.dialogue-history-timeline-header h4 { font-size: .85em; color: #666; margin: 0; }
+.dialogue-history-timeline-count { font-size: .75em; color: #888; }
 .dialogue-history-entry { padding: 6px 8px; background: var(--paper-dark); border-radius: 5px; margin-bottom: 6px; border-left: 3px solid var(--accent); }
 .dialogue-history-entry-header { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: .85em; }
 .dialogue-history-npc-label { font-weight: bold; }
 .dialogue-history-topic { font-size: .78em; color: #666; background: #f0f0f0; padding: 1px 5px; border-radius: 3px; }
+.dialogue-history-turn { font-size: .72em; color: #999; }
 .dialogue-history-attitude-delta { font-size: .78em; padding: 1px 4px; border-radius: 3px; }
 .dialogue-history-player { font-size: .82em; color: #333; margin: 3px 0; padding-left: 8px; border-left: 2px solid #ccc; }
 .dialogue-history-npc-response { font-size: .82em; color: #555; margin: 3px 0; padding-left: 8px; border-left: 2px solid var(--accent); }
+
+/* Phase 34: Enhanced Dialogue History */
+.dialogue-history-npc-chart { margin: 3px 0; }
+.dialogue-history-att-dist { margin-bottom: 10px; }
+.dialogue-history-att-dist-bar { display: flex; height: 18px; border-radius: 3px; overflow: hidden; font-size: .7em; line-height: 18px; text-align: center; color: #fff; }
+.att-dist-friendly { background: #6a9a2a; min-width: 28px; }
+.att-dist-neutral { background: #888; min-width: 28px; }
+.att-dist-cold { background: #c44; min-width: 28px; }
+.dialogue-history-topic-stats { margin-bottom: 10px; padding: 6px 8px; background: var(--paper); border: 1px solid var(--line); border-radius: 3px; }
+.dialogue-history-topic-stats-title { font-size: .75em; color: var(--muted); margin-bottom: 5px; }
+.dialogue-history-topic-bar-row { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
+.dialogue-history-topic-bar-label { flex: 0 0 5em; font-size: .74em; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+.dialogue-history-topic-bar { flex: 1; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.dialogue-history-topic-bar span { display: block; height: 100%; background: var(--accent-soft); border-radius: 3px; transition: width .2s; }
+.dialogue-history-topic-bar-count { flex: 0 0 1.5em; font-size: .7em; color: var(--muted); }
+.dialogue-history-search { margin-bottom: 8px; }
+.dialogue-search-input { width: 100%; padding: 5px 8px; background: var(--paper); border: 1px solid var(--line); border-radius: 3px; font: inherit; font-size: .82em; color: var(--ink); }
+.dialogue-search-input:focus { outline: 2px solid var(--accent-soft); }
+.dialogue-search-count { display: inline-block; margin-top: 3px; font-size: .72em; color: var(--muted); }
+.dialogue-search-count.hidden { display: none; }
+.dialogue-history-actions { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.dialogue-export-btn { padding: 4px 10px; background: var(--paper); color: var(--accent); border: 1px solid var(--line); border-radius: 3px; cursor: pointer; font: inherit; font-size: .78em; }
+.dialogue-export-btn:hover { background: var(--gm-bg); }
+.dialogue-history-more-count { font-size: .72em; color: var(--muted); }
 
 /* Weather Panel (Phase 31) */
 .weather-main { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }

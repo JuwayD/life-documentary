@@ -1228,3 +1228,226 @@ def test_quest_log_data_in_snapshot(client):
     assert any(e["status"] == "active" for e in test_entries)
     assert any(e["status"] == "completed" for e in test_entries)
     assert any(e.get("region") == "测试地区" for e in test_entries)
+
+
+def test_quest_timeline_events_include_region_and_status(client):
+    """调查时间线事件应包含地区和状态字段。"""
+    from mingrpg.tools.write import update_quest_log
+
+    world = client.app.state.world
+    update_quest_log(world, "timeline_test_1", "时间线测试1",
+                     description="测试", region="yangzhou", status="active")
+    update_quest_log(world, "timeline_test_2", "时间线测试2",
+                     description="测试", region="suzhou", status="completed")
+
+    state = client.get("/api/state").json()
+    quest_events = [ev for ev in state["events"] if ev.get("type") == "quest_log"]
+    assert len(quest_events) >= 2
+
+    # Check that events have region and status fields
+    for ev in quest_events:
+        assert "region" in ev
+        assert "status" in ev
+        assert ev["type"] == "quest_log"
+
+    # Verify specific regions exist
+    regions = {ev.get("region") for ev in quest_events}
+    assert "yangzhou" in regions
+    assert "suzhou" in regions
+
+
+def test_quest_flow_data_includes_all_regions(client):
+    """调查流程图应能正确识别所有地区。"""
+    from mingrpg.tools.write import update_quest_log
+
+    world = client.app.state.world
+    # Add entries for multiple regions
+    regions = ["yangzhou", "guazhou", "nanjing", "suzhou", "hangzhou", "huaian", "xuzhou"]
+    for i, region in enumerate(regions):
+        update_quest_log(world, f"flow_test_{region}", f"流程测试{region}",
+                         description="测试", region=region, status="active")
+
+    state = client.get("/api/state").json()
+    quest_log = state["flags"]["quest_log"]
+    entries = quest_log.get("entries", [])
+
+    # Verify all regions are present
+    entry_regions = {e.get("region") for e in entries if e.get("region")}
+    for region in regions:
+        assert region in entry_regions, f"Region {region} not found in quest entries"
+
+
+def test_quest_entry_has_required_fields(client):
+    """调查条目应包含必需字段。"""
+    from mingrpg.tools.write import update_quest_log
+
+    world = client.app.state.world
+    update_quest_log(world, "field_test", "字段测试",
+                     description="测试描述", region="yangzhou", status="active")
+
+    state = client.get("/api/state").json()
+    quest_log = state["flags"]["quest_log"]
+    entries = quest_log.get("entries", [])
+
+    test_entry = next((e for e in entries if e["id"] == "field_test"), None)
+    assert test_entry is not None
+    assert "id" in test_entry
+    assert "title" in test_entry
+    assert "status" in test_entry
+    assert test_entry["title"] == "字段测试"
+    assert test_entry["description"] == "测试描述"
+    assert test_entry["region"] == "yangzhou"
+
+
+# ----- Dialogue history data (Phase 34) -----
+
+def test_dialogue_events_in_state(client):
+    """对话事件应包含在 state 中供前端渲染。"""
+    from mingrpg.tools.write import record_dialogue
+
+    world = client.app.state.world
+    # Record several dialogues with different NPCs and topics
+    record_dialogue(world, "zhifu_wang", "player", topic="天气",
+                    player_line="今天天气不错", npc_response="确实如此",
+                    attitude_delta=5)
+    record_dialogue(world, "zhifu_wang", "player", topic="案情",
+                    player_line="案情如何", npc_response="尚在调查",
+                    attitude_delta=-3)
+    record_dialogue(world, "shiye", "player", topic="秘闻",
+                    player_line="有何消息", npc_response="风声紧",
+                    attitude_delta=2)
+
+    state = client.get("/api/state").json()
+    dialogue_events = [e for e in state["events"] if e.get("type") == "dialogue"]
+    assert len(dialogue_events) >= 3
+
+    # Verify each event has fields needed for filtering
+    for ev in dialogue_events:
+        assert "target" in ev
+        assert "target_name" in ev
+        assert "topic" in ev
+        assert "player_line" in ev
+        assert "npc_response" in ev
+        assert "attitude_delta" in ev
+
+
+def test_dialogue_events_unique_npcs(client):
+    """对话事件应能正确区分不同 NPC。"""
+    from mingrpg.tools.write import record_dialogue
+
+    world = client.app.state.world
+    record_dialogue(world, "zhifu_wang", "player", topic="天气")
+    record_dialogue(world, "shiye", "player", topic="秘闻")
+    record_dialogue(world, "merchant_wu", "player", topic="买卖")
+
+    state = client.get("/api/state").json()
+    dialogue_events = [e for e in state["events"] if e.get("type") == "dialogue"]
+    npc_ids = {e["target"] for e in dialogue_events if e.get("target")}
+    assert len(npc_ids) >= 3
+
+
+def test_dialogue_events_unique_topics(client):
+    """对话事件应能正确区分不同话题。"""
+    from mingrpg.tools.write import record_dialogue
+
+    world = client.app.state.world
+    record_dialogue(world, "zhifu_wang", "player", topic="天气")
+    record_dialogue(world, "zhifu_wang", "player", topic="案情")
+    record_dialogue(world, "zhifu_wang", "player", topic="家常")
+
+    state = client.get("/api/state").json()
+    dialogue_events = [e for e in state["events"] if e.get("type") == "dialogue"]
+    topics = {e["topic"] for e in dialogue_events if e.get("topic")}
+    assert len(topics) >= 3
+
+
+# ----- Phase 34: Dialogue panel enhancements -----
+
+def test_dialogue_events_have_searchable_text(client):
+    """对话事件应包含可搜索的玩家台词和NPC回应。"""
+    from mingrpg.tools.write import record_dialogue
+
+    world = client.app.state.world
+    record_dialogue(world, "zhifu_wang", "player", topic="案情",
+                    player_line="知府大人，案情如何",
+                    npc_response="尚在调查之中", attitude_delta=3)
+
+    state = client.get("/api/state").json()
+    dialogue_events = [e for e in state["events"] if e.get("type") == "dialogue"]
+    assert len(dialogue_events) >= 1
+    ev = dialogue_events[-1]
+    assert "player_line" in ev
+    assert "npc_response" in ev
+    assert "知府" in ev["player_line"]
+    assert "调查" in ev["npc_response"]
+
+
+def test_dialogue_attitude_distribution_data(client):
+    """对话事件应能用于计算态度分布。"""
+    from mingrpg.tools.write import record_dialogue
+
+    world = client.app.state.world
+    # NPC with positive attitude
+    record_dialogue(world, "zhifu_wang", "player", topic="天气",
+                    attitude_delta=15)
+    # NPC with neutral attitude
+    record_dialogue(world, "shiye", "player", topic="案情",
+                    attitude_delta=2)
+    # NPC with negative attitude
+    record_dialogue(world, "merchant_wu", "player", topic="买卖",
+                    attitude_delta=-15)
+
+    state = client.get("/api/state").json()
+    dialogue_events = [e for e in state["events"] if e.get("type") == "dialogue"]
+
+    # Build attitude sums per NPC
+    att_sums = {}
+    for ev in dialogue_events:
+        npc = ev.get("target")
+        if npc:
+            att_sums[npc] = att_sums.get(npc, 0) + (ev.get("attitude_delta") or 0)
+
+    # Should have at least one NPC in each category
+    positive = any(v >= 10 for v in att_sums.values())
+    negative = any(v <= -10 for v in att_sums.values())
+    assert positive
+    assert negative
+
+
+def test_dialogue_topic_statistics(client):
+    """对话事件应能用于计算话题统计。"""
+    from mingrpg.tools.write import record_dialogue
+
+    world = client.app.state.world
+    record_dialogue(world, "zhifu_wang", "player", topic="天气")
+    record_dialogue(world, "zhifu_wang", "player", topic="天气")
+    record_dialogue(world, "zhifu_wang", "player", topic="案情")
+    record_dialogue(world, "shiye", "player", topic="天气")
+
+    state = client.get("/api/state").json()
+    dialogue_events = [e for e in state["events"] if e.get("type") == "dialogue"]
+    topic_counts = {}
+    for ev in dialogue_events:
+        t = ev.get("topic") or "(无话题)"
+        topic_counts[t] = topic_counts.get(t, 0) + 1
+
+    assert topic_counts.get("天气", 0) >= 3
+    assert topic_counts.get("案情", 0) >= 1
+
+
+def test_dialogue_attitude_delta_present(client):
+    """对话事件应包含态度变化值用于导出。"""
+    from mingrpg.tools.write import record_dialogue
+
+    world = client.app.state.world
+    record_dialogue(world, "zhifu_wang", "player", topic="案情",
+                    player_line="知府大人辛苦了",
+                    npc_response="份内之事",
+                    attitude_delta=5)
+
+    state = client.get("/api/state").json()
+    dialogue_events = [e for e in state["events"] if e.get("type") == "dialogue"]
+    ev = dialogue_events[-1]
+    assert ev["attitude_delta"] == 5
+    assert ev["player_line"] == "知府大人辛苦了"
+    assert ev["npc_response"] == "份内之事"
